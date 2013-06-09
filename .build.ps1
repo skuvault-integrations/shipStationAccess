@@ -36,6 +36,7 @@ $project_name = "ShipStationAccess"
 # \release\archive - Contains files archived from the previous builds
 # \src - Contains all source code
 $build_dir = "$BuildRoot\build"
+$log_dir = "$BuildRoot\log"
 $build_artifacts_dir = "$build_dir\artifacts"
 $build_output_dir = "$build_dir\output"
 $release_dir = "$BuildRoot\release"
