@@ -67,14 +67,15 @@
     </Compile>
     <Compile Include="DataService\DataServiceQueryWrapper .cs" />
     <Compile Include="DataService\IDataServiceQuery.cs" />
-    <Compile Include="IShipStationServices.cs" />
+    <Compile Include="IShipStationService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service References\ShipStationApi\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.datasvcmap</DependentUpon>
     </Compile>
-    <Compile Include="ShipStationServices.cs" />
+    <Compile Include="ShipStationFactory.cs" />
+    <Compile Include="ShipStationService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

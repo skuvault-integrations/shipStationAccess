@@ -10,11 +10,11 @@ namespace ShipStationAccess
 	/// ShipStation service connecting directly to ShipStation servers.
 	/// </summary>
 	/// <seealso href="http://api.shipstation.com/MainPage.ashx"/>
-	public class ShipStationServices : IShipStationServices
+	public class ShipStationService : IShipStationService
 	{
 		private readonly ShipStationEntities _context;
 
-		public ShipStationServices( string userName, string password )
+		public ShipStationService( string userName, string password )
 		{
 			this._context = CreateContext( userName, password );
 		}

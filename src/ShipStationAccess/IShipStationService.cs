@@ -5,7 +5,7 @@ using ShipStationAccess.ShipStationApi;
 
 namespace ShipStationAccess
 {
-	public interface IShipStationServices
+	public interface IShipStationService
 	{
 		IDataServiceQuery< Store > Stores { get; }
 		IDataServiceQuery< UserInfo > UserInfos { get; }
