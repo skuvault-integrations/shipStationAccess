@@ -105,7 +105,7 @@ task NuGet Package, Version, {
 		<projectUrl>https://github.com/slav/ShipStationAccess</projectUrl>
 		<licenseUrl>https://raw.github.com/slav/ShipStationAccess/master/License.txt</licenseUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<copyright>Copyright (C) Agile Harbor, LLC 2012</copyright>
+		<copyright>Copyright (C) Agile Harbor, LLC 2013</copyright>
 		<summary>$text</summary>
 		<description>$text</description>
 		<tags>ShipStation</tags>
