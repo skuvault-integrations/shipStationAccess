@@ -99,7 +99,7 @@ task NuGet Package, Version, {
 <package>
 	<metadata>
 		<id>ShipStationAccess</id>
-		<version>$Version-alpha1</version>
+		<version>$Version-alpha2</version>
 		<authors>Slav Ivanyuk</authors>
 		<owners>Slav Ivanyuk</owners>
 		<projectUrl>https://github.com/slav/ShipStationAccess</projectUrl>
@@ -110,7 +110,13 @@ task NuGet Package, Version, {
 		<description>$text</description>
 		<tags>ShipStation</tags>
 		<dependencies> 
-			<dependency id="Netco" version="1.1.0" />
+			<group targetFramework="net45">
+				<dependency id="Netco" version="1.1.0" />
+				<dependency id="Microsoft.Data.Edm" version="5.0.0" />
+				<dependency id="Microsoft.Data.OData" version="5.0.0" />
+				<dependency id="Microsoft.Data.Services.Client" version="5.0.0" />
+				<dependency id="System.Spatial" version="5.0.0" />
+			</group>
 		</dependencies>
 	</metadata>
 </package>
