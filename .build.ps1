@@ -64,9 +64,9 @@ task Build {
 }
 
 task Package  {
-	New-Item $build_output_dir\ShipStationAccess\lib\net40 -itemType directory -force | Out-Null
-	Copy-Item $build_artifacts_dir\ShipStationAccess.??? $build_output_dir\ShipStationAccess\lib\net40 -PassThru |% { Write-Host "Copied " $_.FullName }
-	Copy-Item $build_artifacts_dir\Zayko.Finance.CurrencyConverter.??? $build_output_dir\ShipStationAccess\lib\net40 -PassThru |% { Write-Host "Copied " $_.FullName }
+	New-Item $build_output_dir\ShipStationAccess\lib\net45 -itemType directory -force | Out-Null
+	Copy-Item $build_artifacts_dir\ShipStationAccess.??? $build_output_dir\ShipStationAccess\lib\net45 -PassThru |% { Write-Host "Copied " $_.FullName }
+	Copy-Item $build_artifacts_dir\Zayko.Finance.CurrencyConverter.??? $build_output_dir\ShipStationAccess\lib\net45 -PassThru |% { Write-Host "Copied " $_.FullName }
 }
 
 # Set $script:Version = assembly version
@@ -86,7 +86,7 @@ task Zip Version, {
 	
 	Write-Host "Zipping release to: " $release_zip_file
 	
-	exec { & 7za.exe a $release_zip_file $build_output_dir\ShipStationAccess\lib\net40\* -mx9 }
+	exec { & 7za.exe a $release_zip_file $build_output_dir\ShipStationAccess\lib\net45\* -mx9 }
 }
 
 task NuGet Package, Version, {
@@ -99,7 +99,7 @@ task NuGet Package, Version, {
 <package>
 	<metadata>
 		<id>ShipStationAccess</id>
-		<version>$Version-alpha2</version>
+		<version>$Version-alpha4</version>
 		<authors>Slav Ivanyuk</authors>
 		<owners>Slav Ivanyuk</owners>
 		<projectUrl>https://github.com/slav/ShipStationAccess</projectUrl>

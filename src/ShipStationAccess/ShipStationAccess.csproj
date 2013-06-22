@@ -65,6 +65,7 @@
     <Compile Include="..\Global\GlobalAssemblyInfo.cs">
       <Link>Properties\GlobalAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="DataService\DataServiceQueryProviderWrapper.cs" />
     <Compile Include="DataService\DataServiceQueryWrapper .cs" />
     <Compile Include="DataService\IDataServiceQuery.cs" />
     <Compile Include="IShipStationService.cs" />

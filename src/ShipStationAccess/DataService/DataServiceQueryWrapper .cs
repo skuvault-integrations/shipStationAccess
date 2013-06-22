@@ -39,7 +39,7 @@ namespace ShipStationAccess.DataService
 
 		public IQueryProvider Provider
 		{
-			get { return this._dataServiceQuery.Provider; }
+			get { return new DataServiceQueryProviderWrapper( this._dataServiceQuery.Provider ); }
 		}
 
 		public IDataServiceQuery< TElement > Expand< TTarget >( Expression< Func< TElement, TTarget > > navigationPropertyAccessor )
