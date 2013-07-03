@@ -99,7 +99,7 @@ task NuGet Package, Version, {
 <package>
 	<metadata>
 		<id>ShipStationAccess</id>
-		<version>$Version-alpha4</version>
+		<version>$Version-alpha5</version>
 		<authors>Slav Ivanyuk</authors>
 		<owners>Slav Ivanyuk</owners>
 		<projectUrl>https://github.com/slav/ShipStationAccess</projectUrl>
