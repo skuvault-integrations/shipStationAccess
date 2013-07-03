@@ -10,6 +10,9 @@
 
 // Original file name:
 // Generation date: 6/9/2013 10:58:49 AM
+
+using System.Data.Services.Common;
+
 namespace ShipStationAccess.ShipStationApi
 {
     
@@ -23,7 +26,7 @@ namespace ShipStationAccess.ShipStationApi
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Services.Design", "1.0.0")]
         public ShipStationEntities(global::System.Uri serviceRoot) : 
-                base(serviceRoot)
+                base(serviceRoot,DataServiceProtocolVersion.V3)
         {
             this.ResolveName = new global::System.Func<global::System.Type, string>(this.ResolveNameFromType);
             this.ResolveType = new global::System.Func<string, global::System.Type>(this.ResolveTypeFromName);
