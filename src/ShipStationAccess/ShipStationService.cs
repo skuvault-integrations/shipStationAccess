@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Services.Common;
 using System.Net;
 using System.Threading.Tasks;
 using ShipStationAccess.DataService;
@@ -21,7 +22,7 @@ namespace ShipStationAccess
 
 		private ShipStationEntities CreateContext( string userName, string password )
 		{
-			return new ShipStationEntities( new Uri( "https://data.shipstation.com/1.1" ) )
+			return new ShipStationEntities( new Uri( "https://data.shipstation.com/1.1" ), DataServiceProtocolVersion.V3 )
 				{ Credentials = new NetworkCredential( userName, password ) };
 		}
 

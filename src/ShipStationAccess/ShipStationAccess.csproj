@@ -75,6 +75,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.datasvcmap</DependentUpon>
     </Compile>
+    <Compile Include="ShipStationApi\ShipStationEntities.cs" />
     <Compile Include="ShipStationFactory.cs" />
     <Compile Include="ShipStationService.cs" />
   </ItemGroup>
