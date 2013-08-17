@@ -66,7 +66,6 @@ task Build {
 task Package  {
 	New-Item $build_output_dir\ShipStationAccess\lib\net45 -itemType directory -force | Out-Null
 	Copy-Item $build_artifacts_dir\ShipStationAccess.??? $build_output_dir\ShipStationAccess\lib\net45 -PassThru |% { Write-Host "Copied " $_.FullName }
-	Copy-Item $build_artifacts_dir\Zayko.Finance.CurrencyConverter.??? $build_output_dir\ShipStationAccess\lib\net45 -PassThru |% { Write-Host "Copied " $_.FullName }
 }
 
 # Set $script:Version = assembly version
