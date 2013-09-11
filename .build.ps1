@@ -110,7 +110,7 @@ task NuGet Package, Version, {
 		<tags>ShipStation</tags>
 		<dependencies> 
 			<group targetFramework="net45">
-				<dependency id="Netco" version="1.3.0" />
+				<dependency id="Netco" version="1.3.1" />
 				<dependency id="Microsoft.Data.Edm" version="5.6.0" />
 				<dependency id="Microsoft.Data.OData" version="5.6.0" />
 				<dependency id="Microsoft.Data.Services.Client" version="5.6.0" />
