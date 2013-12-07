@@ -13,410 +13,410 @@ namespace ShipStationAccess
 	/// <seealso href="http://api.shipstation.com/MainPage.ashx"/>
 	public class ShipStationService : IShipStationService
 	{
-		private readonly ShipStationEntities _context;
+		public ShipStationEntities Context { get; private set; }
 
 		public ShipStationService( string userName, string password )
 		{
-			this._context = CreateContext( userName, password );
+			this.Context = CreateContext( userName, password );
 		}
 
 		private ShipStationEntities CreateContext( string userName, string password )
 		{
-			return new ShipStationEntities( new Uri( "https://data.shipstation.com/1.1" ), DataServiceProtocolVersion.V3 )
-				{ Credentials = new NetworkCredential( userName, password ) };
+			return new ShipStationEntities( new Uri( "https://data.shipstation.com/1.1" ), DataServiceProtocolVersion.V3 ) { Credentials = new NetworkCredential( userName, password ) };
 		}
 
 		#region Queries
+
 		public IDataServiceQuery< Store > Stores
 		{
-			get { return new DataServiceQueryWrapper< Store >( this._context.Stores ); }
+			get { return new DataServiceQueryWrapper< Store >( this.Context.Stores ); }
 		}
 
 		public IDataServiceQuery< UserInfo > UserInfos
 		{
-			get { return new DataServiceQueryWrapper< UserInfo >( this._context.UserInfos ); }
+			get { return new DataServiceQueryWrapper< UserInfo >( this.Context.UserInfos ); }
 		}
 
 		public IDataServiceQuery< Order > Orders
 		{
-			get { return new DataServiceQueryWrapper< Order >( this._context.Orders ); }
+			get { return new DataServiceQueryWrapper< Order >( this.Context.Orders ); }
 		}
 
 		public IDataServiceQuery< OrderItem > OrderItems
 		{
-			get { return new DataServiceQueryWrapper< OrderItem >( this._context.OrderItems ); }
+			get { return new DataServiceQueryWrapper< OrderItem >( this.Context.OrderItems ); }
 		}
 
 		public IDataServiceQuery< Shipment > Shipments
 		{
-			get { return new DataServiceQueryWrapper< Shipment >( this._context.Shipments ); }
+			get { return new DataServiceQueryWrapper< Shipment >( this.Context.Shipments ); }
 		}
 
 		public IDataServiceQuery< Carrier > Carriers
 		{
-			get { return new DataServiceQueryWrapper< Carrier >( this._context.Carriers ); }
+			get { return new DataServiceQueryWrapper< Carrier >( this.Context.Carriers ); }
 		}
 
 		public IDataServiceQuery< Customer > Customers
 		{
-			get { return new DataServiceQueryWrapper< Customer >( this._context.Customers ); }
+			get { return new DataServiceQueryWrapper< Customer >( this.Context.Customers ); }
 		}
 
 		public IDataServiceQuery< CustomerUser > CustomerUsers
 		{
-			get { return new DataServiceQueryWrapper< CustomerUser >( this._context.CustomerUsers ); }
+			get { return new DataServiceQueryWrapper< CustomerUser >( this.Context.CustomerUsers ); }
 		}
 
 		public IDataServiceQuery< CustomsItem > CustomsItems
 		{
-			get { return new DataServiceQueryWrapper< CustomsItem >( this._context.CustomsItems ); }
+			get { return new DataServiceQueryWrapper< CustomsItem >( this.Context.CustomsItems ); }
 		}
 
 		public IDataServiceQuery< EmailTemplate > EmailTemplates
 		{
-			get { return new DataServiceQueryWrapper< EmailTemplate >( this._context.EmailTemplates ); }
+			get { return new DataServiceQueryWrapper< EmailTemplate >( this.Context.EmailTemplates ); }
 		}
 
 		public IDataServiceQuery< Marketplace > Marketplaces
 		{
-			get { return new DataServiceQueryWrapper< Marketplace >( this._context.Marketplaces ); }
+			get { return new DataServiceQueryWrapper< Marketplace >( this.Context.Marketplaces ); }
 		}
 
 		public IDataServiceQuery< OrderStatus > OrderStatuses
 		{
-			get { return new DataServiceQueryWrapper< OrderStatus >( this._context.OrderStatuses ); }
+			get { return new DataServiceQueryWrapper< OrderStatus >( this.Context.OrderStatuses ); }
 		}
 
 		public IDataServiceQuery< PackageType > PackageTypes
 		{
-			get { return new DataServiceQueryWrapper< PackageType >( this._context.PackageTypes ); }
+			get { return new DataServiceQueryWrapper< PackageType >( this.Context.PackageTypes ); }
 		}
 
 		public IDataServiceQuery< ShipmentItem > ShipmentItems
 		{
-			get { return new DataServiceQueryWrapper< ShipmentItem >( this._context.ShipmentItems ); }
+			get { return new DataServiceQueryWrapper< ShipmentItem >( this.Context.ShipmentItems ); }
 		}
 
 		public IDataServiceQuery< ShippingService > ShippingServices
 		{
-			get { return new DataServiceQueryWrapper< ShippingService >( this._context.ShippingServices ); }
+			get { return new DataServiceQueryWrapper< ShippingService >( this.Context.ShippingServices ); }
 		}
 
 		public IDataServiceQuery< Warehouse > Warehouses
 		{
-			get { return new DataServiceQueryWrapper< Warehouse >( this._context.Warehouses ); }
+			get { return new DataServiceQueryWrapper< Warehouse >( this.Context.Warehouses ); }
 		}
 
 		public IDataServiceQuery< OrderFilter > OrderFilters
 		{
-			get { return new DataServiceQueryWrapper< OrderFilter >( this._context.OrderFilters ); }
+			get { return new DataServiceQueryWrapper< OrderFilter >( this.Context.OrderFilters ); }
 		}
 
 		public IDataServiceQuery< Product > Products
 		{
-			get { return new DataServiceQueryWrapper< Product >( this._context.Products ); }
+			get { return new DataServiceQueryWrapper< Product >( this.Context.Products ); }
 		}
 
 		public IDataServiceQuery< ShippingProvider > ShippingProviders
 		{
-			get { return new DataServiceQueryWrapper< ShippingProvider >( this._context.ShippingProviders ); }
+			get { return new DataServiceQueryWrapper< ShippingProvider >( this.Context.ShippingProviders ); }
 		}
 		#endregion
 
 		#region Add
 		public void AddToStores( Store store )
 		{
-			this._context.AddToStores( store );
+			this.Context.AddToStores( store );
 		}
 
 		public void AddToUserInfos( UserInfo userInfo )
 		{
-			this._context.AddToUserInfos( userInfo );
+			this.Context.AddToUserInfos( userInfo );
 		}
 
 		public void AddToOrders( Order order )
 		{
-			this._context.AddToOrders( order );
+			this.Context.AddToOrders( order );
 		}
 
 		public void AddToOrderItems( OrderItem orderItem )
 		{
-			this._context.AddToOrderItems( orderItem );
+			this.Context.AddToOrderItems( orderItem );
 		}
 
 		public void AddToShipments( Shipment shipment )
 		{
-			this._context.AddToShipments( shipment );
+			this.Context.AddToShipments( shipment );
 		}
 
 		public void AddToCarriers( Carrier carrier )
 		{
-			this._context.AddToCarriers( carrier );
+			this.Context.AddToCarriers( carrier );
 		}
 
 		public void AddToCustomers( Customer customer )
 		{
-			this._context.AddToCustomers( customer );
+			this.Context.AddToCustomers( customer );
 		}
 
 		public void AddToCustomerUsers( CustomerUser customerUser )
 		{
-			this._context.AddToCustomerUsers( customerUser );
+			this.Context.AddToCustomerUsers( customerUser );
 		}
 
 		public void AddToCustomsItems( CustomsItem customsItem )
 		{
-			this._context.AddToCustomsItems( customsItem );
+			this.Context.AddToCustomsItems( customsItem );
 		}
 
 		public void AddToEmailTemplates( EmailTemplate emailTemplate )
 		{
-			this._context.AddToEmailTemplates( emailTemplate );
+			this.Context.AddToEmailTemplates( emailTemplate );
 		}
 
 		public void AddToMarketplaces( Marketplace marketplace )
 		{
-			this._context.AddToMarketplaces( marketplace );
+			this.Context.AddToMarketplaces( marketplace );
 		}
 
 		public void AddToOrderStatuses( OrderStatus orderStatus )
 		{
-			this._context.AddToOrderStatuses( orderStatus );
+			this.Context.AddToOrderStatuses( orderStatus );
 		}
 
 		public void AddToPackageTypes( PackageType packageType )
 		{
-			this._context.AddToPackageTypes( packageType );
+			this.Context.AddToPackageTypes( packageType );
 		}
 
 		public void AddToShipmentItems( ShipmentItem shipmentItem )
 		{
-			this._context.AddToShipmentItems( shipmentItem );
+			this.Context.AddToShipmentItems( shipmentItem );
 		}
 
 		public void AddToShippingServices( ShippingService shippingService )
 		{
-			this._context.AddToShippingServices( shippingService );
+			this.Context.AddToShippingServices( shippingService );
 		}
 
 		public void AddToWarehouses( Warehouse warehouse )
 		{
-			this._context.AddToWarehouses( warehouse );
+			this.Context.AddToWarehouses( warehouse );
 		}
 
 		public void AddToOrderFilters( OrderFilter orderFilter )
 		{
-			this._context.AddToOrderFilters( orderFilter );
+			this.Context.AddToOrderFilters( orderFilter );
 		}
 
 		public void AddToProducts( Product product )
 		{
-			this._context.AddToProducts( product );
+			this.Context.AddToProducts( product );
 		}
 
 		public void AddToShippingProviders( ShippingProvider shippingProvider )
 		{
-			this._context.AddToShippingProviders( shippingProvider );
+			this.Context.AddToShippingProviders( shippingProvider );
 		}
 		#endregion
 
 		#region Update
 		public void UpdateStore( Store store )
 		{
-			this._context.UpdateObject( store );
+			this.Context.UpdateObject( store );
 		}
 
 		public void UpdateUserInfo( UserInfo userInfo )
 		{
-			this._context.UpdateObject( userInfo );
+			this.Context.UpdateObject( userInfo );
 		}
 
 		public void UpdateOrder( Order order )
 		{
-			this._context.UpdateObject( order );
+			this.Context.UpdateObject( order );
 		}
 
 		public void UpdateOrderItem( OrderItem orderItem )
 		{
-			this._context.UpdateObject( orderItem );
+			this.Context.UpdateObject( orderItem );
 		}
 
 		public void UpdateShipment( Shipment shipment )
 		{
-			this._context.UpdateObject( shipment );
+			this.Context.UpdateObject( shipment );
 		}
 
 		public void UpdateCarrier( Carrier carrier )
 		{
-			this._context.UpdateObject( carrier );
+			this.Context.UpdateObject( carrier );
 		}
 
 		public void UpdateCustomer( Customer customer )
 		{
-			this._context.UpdateObject( customer );
+			this.Context.UpdateObject( customer );
 		}
 
 		public void UpdateCustomerUser( CustomerUser customerUser )
 		{
-			this._context.UpdateObject( customerUser );
+			this.Context.UpdateObject( customerUser );
 		}
 
 		public void UpdateCustomsItem( CustomsItem customsItem )
 		{
-			this._context.UpdateObject( customsItem );
+			this.Context.UpdateObject( customsItem );
 		}
 
 		public void UpdateEmailTemplate( EmailTemplate emailTemplate )
 		{
-			this._context.UpdateObject( emailTemplate );
+			this.Context.UpdateObject( emailTemplate );
 		}
 
 		public void UpdateMarketplace( Marketplace marketplace )
 		{
-			this._context.UpdateObject( marketplace );
+			this.Context.UpdateObject( marketplace );
 		}
 
 		public void UpdateOrderStatus( OrderStatus orderStatus )
 		{
-			this._context.UpdateObject( orderStatus );
+			this.Context.UpdateObject( orderStatus );
 		}
 
 		public void UpdatePackageType( PackageType packageType )
 		{
-			this._context.UpdateObject( packageType );
+			this.Context.UpdateObject( packageType );
 		}
 
 		public void UpdateShipmentItem( ShipmentItem shipmentItem )
 		{
-			this._context.UpdateObject( shipmentItem );
+			this.Context.UpdateObject( shipmentItem );
 		}
 
 		public void UpdateShippingService( ShippingService shippingService )
 		{
-			this._context.UpdateObject( shippingService );
+			this.Context.UpdateObject( shippingService );
 		}
 
 		public void UpdateWarehouse( Warehouse warehouse )
 		{
-			this._context.UpdateObject( warehouse );
+			this.Context.UpdateObject( warehouse );
 		}
 
 		public void UpdateOrderFilter( OrderFilter orderFilter )
 		{
-			this._context.UpdateObject( orderFilter );
+			this.Context.UpdateObject( orderFilter );
 		}
 
 		public void UpdateProduct( Product product )
 		{
-			this._context.UpdateObject( product );
+			this.Context.UpdateObject( product );
 		}
 
 		public void UpdateShippingProvider( ShippingProvider shippingProvider )
 		{
-			this._context.UpdateObject( shippingProvider );
+			this.Context.UpdateObject( shippingProvider );
 		}
 		#endregion
 
 		#region Delete
 		public void DeleteStore( Store store )
 		{
-			this._context.DeleteObject( store );
+			this.Context.DeleteObject( store );
 		}
 
 		public void DeleteUserInfo( UserInfo userInfo )
 		{
-			this._context.DeleteObject( userInfo );
+			this.Context.DeleteObject( userInfo );
 		}
 
 		public void DeleteOrder( Order order )
 		{
-			this._context.DeleteObject( order );
+			this.Context.DeleteObject( order );
 		}
 
 		public void DeleteOrderItem( OrderItem orderItem )
 		{
-			this._context.DeleteObject( orderItem );
+			this.Context.DeleteObject( orderItem );
 		}
 
 		public void DeleteShipment( Shipment shipment )
 		{
-			this._context.DeleteObject( shipment );
+			this.Context.DeleteObject( shipment );
 		}
 
 		public void DeleteCarrier( Carrier carrier )
 		{
-			this._context.DeleteObject( carrier );
+			this.Context.DeleteObject( carrier );
 		}
 
 		public void DeleteCustomer( Customer customer )
 		{
-			this._context.DeleteObject( customer );
+			this.Context.DeleteObject( customer );
 		}
 
 		public void DeleteCustomerUser( CustomerUser customerUser )
 		{
-			this._context.DeleteObject( customerUser );
+			this.Context.DeleteObject( customerUser );
 		}
 
 		public void DeleteCustomsItem( CustomsItem customsItem )
 		{
-			this._context.DeleteObject( customsItem );
+			this.Context.DeleteObject( customsItem );
 		}
 
 		public void DeleteEmailTemplate( EmailTemplate emailTemplate )
 		{
-			this._context.DeleteObject( emailTemplate );
+			this.Context.DeleteObject( emailTemplate );
 		}
 
 		public void DeleteMarketplace( Marketplace marketplace )
 		{
-			this._context.DeleteObject( marketplace );
+			this.Context.DeleteObject( marketplace );
 		}
 
 		public void DeleteOrderStatus( OrderStatus orderStatus )
 		{
-			this._context.DeleteObject( orderStatus );
+			this.Context.DeleteObject( orderStatus );
 		}
 
 		public void DeletePackageType( PackageType packageType )
 		{
-			this._context.DeleteObject( packageType );
+			this.Context.DeleteObject( packageType );
 		}
 
 		public void DeleteShipmentItem( ShipmentItem shipmentItem )
 		{
-			this._context.DeleteObject( shipmentItem );
+			this.Context.DeleteObject( shipmentItem );
 		}
 
 		public void DeleteShippingService( ShippingService shippingService )
 		{
-			this._context.DeleteObject( shippingService );
+			this.Context.DeleteObject( shippingService );
 		}
 
 		public void DeleteWarehouse( Warehouse warehouse )
 		{
-			this._context.DeleteObject( warehouse );
+			this.Context.DeleteObject( warehouse );
 		}
 
 		public void DeleteOrderFilter( OrderFilter orderFilter )
 		{
-			this._context.DeleteObject( orderFilter );
+			this.Context.DeleteObject( orderFilter );
 		}
 
 		public void DeleteProduct( Product product )
 		{
-			this._context.DeleteObject( product );
+			this.Context.DeleteObject( product );
 		}
 
 		public void DeleteShippingProvider( ShippingProvider shippingProvider )
 		{
-			this._context.DeleteObject( shippingProvider );
+			this.Context.DeleteObject( shippingProvider );
 		}
 		#endregion
 
 		public void SaveChanges()
 		{
-			this._context.SaveChanges();
+			this.Context.SaveChanges();
 		}
 
 		public Task SaveChangesAsync()
@@ -426,12 +426,12 @@ namespace ShipStationAccess
 
 		public IAsyncResult BeginSaveChanges( AsyncCallback callback, object state )
 		{
-			return this._context.BeginSaveChanges( callback, state );
+			return this.Context.BeginSaveChanges( callback, state );
 		}
 
 		public void EndSaveChanges( IAsyncResult asyncResult )
 		{
-			this._context.EndSaveChanges( asyncResult );
+			this.Context.EndSaveChanges( asyncResult );
 		}
 	}
 }

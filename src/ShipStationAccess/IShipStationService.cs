@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using ShipStationAccess.DataService;
 using ShipStationAccess.ShipStationApi;
 
@@ -7,6 +6,8 @@ namespace ShipStationAccess
 {
 	public interface IShipStationService
 	{
+		ShipStationEntities Context { get; }
+
 		IDataServiceQuery< Store > Stores { get; }
 		IDataServiceQuery< UserInfo > UserInfos { get; }
 
