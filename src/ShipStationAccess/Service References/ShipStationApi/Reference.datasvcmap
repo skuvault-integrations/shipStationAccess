@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="e17854a4-9508-4934-bd31-98aa7dd4e76e" xmlns="urn:schemas-microsoft-com:xml-dataservicemap">
   <MetadataSources>
-    <MetadataSource Address="http://data.shipstation.com/1.1/" Protocol="http" SourceId="1" />
+    <MetadataSource Address="http://data.shipstation.com/1.3/" Protocol="http" SourceId="1" />
   </MetadataSources>
   <Metadata>
-    <MetadataFile FileName="service.edmx" MetadataType="Edmx" ID="a0f2fe4d-1964-4f66-8767-8afe72738083" SourceId="1" SourceUrl="http://data.shipstation.com/1.1/" />
+    <MetadataFile FileName="service.edmx" MetadataType="Edmx" ID="a0f2fe4d-1964-4f66-8767-8afe72738083" SourceId="1" SourceUrl="http://data.shipstation.com/1.3/" />
   </Metadata>
   <Extensions />
   <Parameters>

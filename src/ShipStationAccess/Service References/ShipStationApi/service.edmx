@@ -5,6 +5,17 @@
         <FunctionImport Name="GetShippingLabel" ReturnType="Edm.Binary" m:HttpMethod="GET">
           <Parameter Name="ShipmentID" Type="Edm.Int32" Mode="In" />
         </FunctionImport>
+        <FunctionImport Name="VoidShipment" ReturnType="SS.WebData.VoidResponse" m:HttpMethod="GET">
+          <Parameter Name="ShipmentID" Type="Edm.Int32" Mode="In" />
+        </FunctionImport>
+        <FunctionImport Name="AddTagToOrder" m:HttpMethod="GET">
+          <Parameter Name="tag" Type="Edm.String" Mode="In" />
+          <Parameter Name="orderId" Type="Edm.Int32" Mode="In" />
+        </FunctionImport>
+        <FunctionImport Name="RemoveTagFromOrder" m:HttpMethod="GET">
+          <Parameter Name="tag" Type="Edm.String" Mode="In" />
+          <Parameter Name="orderId" Type="Edm.Int32" Mode="In" />
+        </FunctionImport>
         <EntitySet Name="Stores" EntityType="SS.WebData.Store" />
         <EntitySet Name="UserInfos" EntityType="SS.WebData.UserInfo" />
         <EntitySet Name="Orders" EntityType="SS.WebData.Order" />
@@ -156,6 +167,10 @@
           <End Role="ShippingServiceProvider" EntitySet="ShippingProviders" />
           <End Role="ShippingService" EntitySet="ShippingServices" />
         </AssociationSet>
+        <AssociationSet Name="OrderCustomer" Association="SS.WebData.OrderCustomer">
+          <End Role="Order" EntitySet="Orders" />
+          <End Role="Customer" EntitySet="Customers" />
+        </AssociationSet>
       </EntityContainer>
       <EntityType Name="Store">
         <Key>
@@ -269,6 +284,7 @@
         <Property Name="CustomField3" Type="Edm.String" Nullable="true" MaxLength="100" Unicode="true" FixedLength="false" />
         <Property Name="AssignedUser" Type="Edm.Guid" Nullable="true" />
         <Property Name="Source" Type="Edm.String" Nullable="true" MaxLength="50" Unicode="true" FixedLength="false" />
+        <Property Name="BuyerName" Type="Edm.String" Nullable="false" />
         <NavigationProperty Name="Store" Relationship="SS.WebData.FK_Order_Store" FromRole="Order" ToRole="Store" />
         <NavigationProperty Name="OrderItems" Relationship="SS.WebData.FK_OrderItem_Order" FromRole="Order" ToRole="OrderItem" />
         <NavigationProperty Name="Shipments" Relationship="SS.WebData.FK_Shipment_Order" FromRole="Order" ToRole="Shipment" />
@@ -280,6 +296,7 @@
         <NavigationProperty Name="PackageType" Relationship="SS.WebData.FK_Order_PackageType" FromRole="Order" ToRole="PackageType" />
         <NavigationProperty Name="RequestedService" Relationship="SS.WebData.OrderRequestedShippingService" FromRole="Order" ToRole="ShippingService" />
         <NavigationProperty Name="ShippingProvider" Relationship="SS.WebData.FK__Order__ProviderI__06B7F65E" FromRole="Order" ToRole="ShippingServiceProvider" />
+        <NavigationProperty Name="Customer" Relationship="SS.WebData.OrderCustomer" FromRole="Order" ToRole="Customer" />
       </EntityType>
       <EntityType Name="OrderItem">
         <Key>
@@ -307,6 +324,7 @@
         <Property Name="WarehouseLocation" Type="Edm.String" Nullable="true" MaxLength="100" Unicode="true" FixedLength="false" />
         <Property Name="Options" Type="Edm.String" Nullable="true" MaxLength="200" Unicode="true" FixedLength="false" />
         <Property Name="Inactive" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="OriginalImportKey" Type="Edm.String" Nullable="false" />
         <NavigationProperty Name="Order" Relationship="SS.WebData.FK_OrderItem_Order" FromRole="OrderItem" ToRole="Order" />
         <NavigationProperty Name="Product" Relationship="SS.WebData.FK_OrderItem_Product" FromRole="OrderItem" ToRole="Product" />
       </EntityType>
@@ -600,6 +618,12 @@
         <NavigationProperty Name="Carrier" Relationship="SS.WebData.FK__ShippingS__Carri__0F824689" FromRole="ShippingServiceProvider" ToRole="Carrier" />
         <NavigationProperty Name="ShippingServices" Relationship="SS.WebData.FK__ShippingS__Provi__09C96D33" FromRole="ShippingServiceProvider" ToRole="ShippingService" />
       </EntityType>
+      <ComplexType Name="VoidResponse">
+        <Property Name="ShipmentID" Type="Edm.Int32" Nullable="false" />
+        <Property Name="TrackingNumber" Type="Edm.String" Nullable="false" />
+        <Property Name="Success" Type="Edm.Boolean" Nullable="false" />
+        <Property Name="Message" Type="Edm.String" Nullable="false" />
+      </ComplexType>
       <Association Name="FK_Order_Store">
         <End Role="Store" Type="SS.WebData.Store" Multiplicity="1" />
         <End Role="Order" Type="SS.WebData.Order" Multiplicity="*" />
@@ -993,6 +1017,18 @@
           </Principal>
           <Dependent Role="ShippingService">
             <PropertyRef Name="ProviderId" />
+          </Dependent>
+        </ReferentialConstraint>
+      </Association>
+      <Association Name="OrderCustomer">
+        <End Role="Order" Type="SS.WebData.Order" Multiplicity="*" />
+        <End Role="Customer" Type="SS.WebData.Customer" Multiplicity="0..1" />
+        <ReferentialConstraint>
+          <Principal Role="Customer">
+            <PropertyRef Name="CustomerID" />
+          </Principal>
+          <Dependent Role="Order">
+            <PropertyRef Name="CustomerID" />
           </Dependent>
         </ReferentialConstraint>
       </Association>
