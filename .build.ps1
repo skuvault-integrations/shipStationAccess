@@ -98,11 +98,11 @@ task NuGet Package, Version, {
 <package>
 	<metadata>
 		<id>ShipStationAccess</id>
-		<version>$Version-alpha5</version>
+		<version>$Version-alpha6</version>
 		<authors>Slav Ivanyuk</authors>
 		<owners>Slav Ivanyuk</owners>
-		<projectUrl>https://github.com/slav/ShipStationAccess</projectUrl>
-		<licenseUrl>https://raw.github.com/slav/ShipStationAccess/master/License.txt</licenseUrl>
+		<projectUrl>https://github.com/agileharbor/ShipStationAccess</projectUrl>
+		<licenseUrl>https://raw.github.com/agileharbor/ShipStationAccess/master/License.txt</licenseUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<copyright>Copyright (C) Agile Harbor, LLC 2013</copyright>
 		<summary>$text</summary>
