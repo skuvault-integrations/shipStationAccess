@@ -9,7 +9,7 @@
 //------------------------------------------------------------------------------
 
 // Original file name:
-// Generation date: 1/29/2014 9:20:03 AM
+// Generation date: 1/29/2014 9:22:22 AM
 namespace ShipStationAccess.ShipStationApi
 {
     
