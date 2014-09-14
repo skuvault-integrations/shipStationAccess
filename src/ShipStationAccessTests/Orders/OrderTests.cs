@@ -1,0 +1,75 @@
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using FluentAssertions;
+using LINQtoCSV;
+using NUnit.Framework;
+using ShipStationAccess;
+using ShipStationAccess.V2.Models;
+
+namespace ShipStationAccessTests.Orders
+{
+	public class OrderTests
+	{
+		private readonly IShipStationFactory ShipStationFactory = new ShipStationFactory();
+		private ShipStationCredentials _credentials;
+
+		[ SetUp ]
+		public void Init()
+		{
+			const string credentialsFilePath = @"..\..\Files\ShipStationCredentials.csv";
+
+			var cc = new CsvContext();
+			var testConfig = cc.Read< TestConfig >( credentialsFilePath, new CsvFileDescription { FirstLineHasColumnNames = true } ).FirstOrDefault();
+
+			if( testConfig != null )
+				this._credentials = new ShipStationCredentials( testConfig.ApiKey, testConfig.ApiSecret );
+		}
+
+		[ Test ]
+		public void GetOrders()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
+
+			orders.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public async Task GetOrdersAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
+
+			orders.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public void UpdateOrder()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
+
+			var orderToupdate = orders.FirstOrDefault();
+			if( orderToupdate == null )
+				return;
+
+			orderToupdate.Items[ 0 ].Sku = "test change";
+			service.UpdateOrder( orderToupdate );
+		}
+
+		[ Test ]
+		public async Task UpdateOrderAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
+
+			var orderToupdate = orders.FirstOrDefault();
+			if( orderToupdate == null )
+				return;
+
+			orderToupdate.Items[ 0 ].Sku = "test change";
+			service.UpdateOrder( orderToupdate );
+		}
+	}
+}

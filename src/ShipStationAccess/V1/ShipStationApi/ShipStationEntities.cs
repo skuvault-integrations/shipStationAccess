@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data.Services.Common;
 
-namespace ShipStationAccess.ShipStationApi
+namespace ShipStationAccess.V1.ShipStationApi
 {
 	public partial class ShipStationEntities
 	{

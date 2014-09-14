@@ -6,7 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace ShipStationAccess.DataService
+namespace ShipStationAccess.V1.DataService
 {
 	public class DataServiceQueryWrapper< TElement > : IDataServiceQuery< TElement >
 	{

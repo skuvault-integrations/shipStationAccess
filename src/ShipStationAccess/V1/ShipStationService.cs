@@ -2,10 +2,12 @@
 using System.Data.Services.Common;
 using System.Net;
 using System.Threading.Tasks;
-using ShipStationAccess.DataService;
-using ShipStationAccess.ShipStationApi;
+using ShipStationAccess.V1.DataService;
+using ShipStationAccess.V1.Models;
+using ShipStationAccess.V1.ShipStationApi;
+using ShipStationEntities = ShipStationAccess.V1.ShipStationApi.ShipStationEntities;
 
-namespace ShipStationAccess
+namespace ShipStationAccess.V1
 {
 	/// <summary>
 	/// ShipStation service connecting directly to ShipStation servers.
@@ -15,9 +17,9 @@ namespace ShipStationAccess
 	{
 		public ShipStationEntities Context { get; private set; }
 
-		public ShipStationService( string userName, string password )
+		public ShipStationService( ShipStationCredentials credentials )
 		{
-			this.Context = CreateContext( userName, password );
+			this.Context = this.CreateContext( credentials.UserName, credentials.Password );
 		}
 
 		private ShipStationEntities CreateContext( string userName, string password )

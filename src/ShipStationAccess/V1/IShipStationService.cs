@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
-using ShipStationAccess.DataService;
-using ShipStationAccess.ShipStationApi;
+using ShipStationAccess.V1.DataService;
+using ShipStationAccess.V1.ShipStationApi;
+using ShipStationEntities = ShipStationAccess.V1.ShipStationApi.ShipStationEntities;
 
-namespace ShipStationAccess
+namespace ShipStationAccess.V1
 {
 	public interface IShipStationService
 	{

@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace ShipStationAccess.DataService
+namespace ShipStationAccess.V1.DataService
 {
 	public class DataServiceQueryProviderWrapper : IQueryProvider
 	{
@@ -38,12 +38,12 @@ namespace ShipStationAccess.DataService
 
 		public object Execute( Expression expression )
 		{
-			return _wrappedProvider.Execute( expression );
+			return this._wrappedProvider.Execute( expression );
 		}
 
 		public TResult Execute< TResult >( Expression expression )
 		{
-			return _wrappedProvider.Execute< TResult >( expression );
+			return this._wrappedProvider.Execute< TResult >( expression );
 		}
 	}
 }
