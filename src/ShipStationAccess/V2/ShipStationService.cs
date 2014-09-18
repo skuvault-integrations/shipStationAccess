@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ShipStationAccess.V1.ShipStationApi;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccess.V2
@@ -21,7 +23,7 @@ namespace ShipStationAccess.V2
 			this._webRequestServices = new WebRequestServices( credentials );
 		}
 
-		#region Get
+		#region Get Orders
 		public IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo )
 		{
 			var pagesCount = 1;
@@ -49,6 +51,8 @@ namespace ShipStationAccess.V2
 				this.CreateApiDelay().Wait();
 				pagesCount++;
 			} while( hasOrders );
+
+			this.FindMarketplaceIds( orders );
 
 			return orders;
 		}
@@ -81,11 +85,13 @@ namespace ShipStationAccess.V2
 				pagesCount++;
 			} while( hasOrders );
 
+			await this.FindMarketplaceIdsAsync( orders );
+
 			return orders;
 		}
 		#endregion
 
-		#region Update
+		#region Update Orders
 		public void UpdateOrder( ShipStationOrder order )
 		{
 			ActionPolicies.Submit.Do( () => this._webRequestServices.PostData( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() ) );
@@ -97,6 +103,52 @@ namespace ShipStationAccess.V2
 			{
 				await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() );
 			} );
+		}
+		#endregion
+
+		#region Get Stores
+		public IEnumerable< ShipStationStore > GetStores()
+		{
+			var stores = new List< ShipStationStore >();
+			ActionPolicies.Submit.Do( () =>
+			{
+				stores = this._webRequestServices.GetResponse< List< ShipStationStore > >( ShipStationCommand.GetStores, ParamsBuilder.EmptyParams );
+			} );
+			return stores;
+		}
+
+		public async Task< IEnumerable< ShipStationStore > > GetStoresAsync()
+		{
+			var stores = new List< ShipStationStore >();
+			await ActionPolicies.SubmitAsync.Do( async () =>
+			{
+				stores = await this._webRequestServices.GetResponseAsync< List< ShipStationStore > >( ShipStationCommand.GetStores, ParamsBuilder.EmptyParams );
+			} );
+			return stores;
+		}
+
+		private void FindMarketplaceIds(IEnumerable<ShipStationOrder>orders )
+		{
+			var stores = this.GetStores();
+
+			foreach( var order in orders )
+			{
+				var store = stores.FirstOrDefault( s => s.StoreId == order.AdvancedOptions.StoreId );
+				if( store != null )
+					order.MarketplaceId = store.MarketplaceId;
+			}
+		}
+
+		private async Task FindMarketplaceIdsAsync(IEnumerable<ShipStationOrder>orders )
+		{
+			var stores = await this.GetStoresAsync();
+
+			foreach( var order in orders )
+			{
+				var store = stores.FirstOrDefault( s => s.StoreId == order.AdvancedOptions.StoreId );
+				if( store != null )
+					order.MarketplaceId = store.MarketplaceId;
+			}
 		}
 		#endregion
 

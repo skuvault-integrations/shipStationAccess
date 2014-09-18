@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Models.Store;
 
 namespace ShipStationAccess.V2
 {
@@ -12,5 +13,8 @@ namespace ShipStationAccess.V2
 
 		void UpdateOrder( ShipStationOrder order );
 		Task UpdateOrderAsync( ShipStationOrder order );
+
+		IEnumerable< ShipStationStore > GetStores();
+		Task< IEnumerable< ShipStationStore > > GetStoresAsync();
 	}
 }

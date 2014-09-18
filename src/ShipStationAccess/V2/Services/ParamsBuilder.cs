@@ -6,6 +6,8 @@ namespace ShipStationAccess.V2.Services
 {
 	internal static class ParamsBuilder
 	{
+		public static readonly string EmptyParams = string.Empty;
+
 		public static string CreateNewOrdersParams( DateTime startDate, DateTime endDate )
 		{
 			var endpoint = string.Format( "?{0}={1}&{2}={3}",

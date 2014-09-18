@@ -71,5 +71,23 @@ namespace ShipStationAccessTests.Orders
 			orderToupdate.Items[ 0 ].Sku = "test change";
 			service.UpdateOrder( orderToupdate );
 		}
+
+		[ Test ]
+		public void GetStores()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var stores = service.GetStores();
+
+			stores.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public async Task GetStoresAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var stores = await service.GetStoresAsync();
+
+			stores.Count().Should().BeGreaterThan( 0 );
+		}
 	}
 }

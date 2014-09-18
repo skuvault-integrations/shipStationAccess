@@ -95,6 +95,8 @@ namespace ShipStationAccess.V2.Models.Order
 		[ DataMember( Name = "advancedOptions" ) ]
 		public ShipStationOrderAdvancedOptions AdvancedOptions{ get; set; }
 
+		public int MarketplaceId{ get; set; }
+
 		#region Equality members
 		public bool Equals( ShipStationOrder other )
 		{

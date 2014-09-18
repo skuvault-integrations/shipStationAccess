@@ -108,6 +108,8 @@
     <Compile Include="V2\Models\ShipStationCredentials.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrder.cs" />
     <Compile Include="V2\Models\OrderItem\ShipStationOrderItem.cs" />
+    <Compile Include="V2\Models\Store\ShipStationStore.cs" />
+    <Compile Include="V2\Models\Store\ShipStationStores.cs" />
     <Compile Include="V2\Services\JsonSerialization.cs" />
     <Compile Include="V2\Services\ParamsBuilder.cs" />
     <Compile Include="V2\Services\WebRequestServices.cs" />
