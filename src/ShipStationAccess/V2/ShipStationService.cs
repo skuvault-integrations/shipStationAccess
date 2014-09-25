@@ -58,7 +58,7 @@ namespace ShipStationAccess.V2
 
 		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo )
 		{
-			var pagesCount = 0;
+			var pagesCount = 1;
 			var orders = new List< ShipStationOrder >();
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
