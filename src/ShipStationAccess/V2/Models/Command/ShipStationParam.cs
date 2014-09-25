@@ -7,6 +7,7 @@
 		public static readonly ShipStationParam OrdersModifiedDateTo = new ShipStationParam( "modifyDateEnd" );
 		public static readonly ShipStationParam OrdersCreatedDateFrom = new ShipStationParam( "orderDateStart" );
 		public static readonly ShipStationParam OrdersCreatedDateTo = new ShipStationParam( "orderDateEnd" );
+		public static readonly ShipStationParam OrdersStatus = new ShipStationParam( "orderStatus" );
 		public static readonly ShipStationParam PageSize = new ShipStationParam( "pageSize" );
 		public static readonly ShipStationParam Page = new ShipStationParam( "page" );
 

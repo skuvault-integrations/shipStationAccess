@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ShipStationAccess.V1.ShipStationApi;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
@@ -15,7 +14,7 @@ namespace ShipStationAccess.V2
 	public sealed class ShipStationService : IShipStationService
 	{
 		private readonly WebRequestServices _webRequestServices;
-		private const int RequestMaxLimit = 1;
+		private const int RequestMaxLimit = 500;
 		private readonly TimeSpan DefaultApiDelay = TimeSpan.FromMilliseconds( 150 );
 
 		public ShipStationService( ShipStationCredentials credentials )
@@ -34,9 +33,10 @@ namespace ShipStationAccess.V2
 
 			do
 			{
-				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( pagesCount + 1, RequestMaxLimit ) );
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( pagesCount, RequestMaxLimit ) );
 				var compositeNewOrdersEndpoint = newOrdersEndpoint.ConcatParams( nextPageParams );
 				var compositeModifiedOrdersEndpoint = modifiedOrdersEndpoint.ConcatParams( nextPageParams );
+				pagesCount++;
 
 				ActionPolicies.Get.Do( () =>
 				{
@@ -49,7 +49,6 @@ namespace ShipStationAccess.V2
 
 				//API requirement
 				this.CreateApiDelay().Wait();
-				pagesCount++;
 			} while( hasOrders );
 
 			this.FindMarketplaceIds( orders );
@@ -59,7 +58,7 @@ namespace ShipStationAccess.V2
 
 		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo )
 		{
-			var pagesCount = 1;
+			var pagesCount = 0;
 			var orders = new List< ShipStationOrder >();
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
@@ -67,9 +66,10 @@ namespace ShipStationAccess.V2
 
 			do
 			{
-				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( pagesCount + 1, RequestMaxLimit ) );
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( pagesCount, RequestMaxLimit ) );
 				var compositeNewOrdersEndpoint = newOrdersEndpoint.ConcatParams( nextPageParams );
 				var compositeModifiedOrdersEndpoint = modifiedOrdersEndpoint.ConcatParams( nextPageParams );
+				pagesCount++;
 
 				await ActionPolicies.GetAsync.Do( async () =>
 				{
@@ -82,7 +82,6 @@ namespace ShipStationAccess.V2
 
 				//API requirement
 				this.CreateApiDelay().Wait();
-				pagesCount++;
 			} while( hasOrders );
 
 			await this.FindMarketplaceIdsAsync( orders );
