@@ -125,8 +125,10 @@ namespace ShipStationAccess.V2
 			} );
 			return stores;
 		}
+		#endregion
 
-		private void FindMarketplaceIds(IEnumerable<ShipStationOrder>orders )
+		#region Misc
+		private void FindMarketplaceIds( IEnumerable< ShipStationOrder > orders )
 		{
 			var stores = this.GetStores();
 
@@ -138,7 +140,7 @@ namespace ShipStationAccess.V2
 			}
 		}
 
-		private async Task FindMarketplaceIdsAsync(IEnumerable<ShipStationOrder>orders )
+		private async Task FindMarketplaceIdsAsync( IEnumerable< ShipStationOrder > orders )
 		{
 			var stores = await this.GetStoresAsync();
 
@@ -149,9 +151,7 @@ namespace ShipStationAccess.V2
 					order.MarketplaceId = store.MarketplaceId;
 			}
 		}
-		#endregion
 
-		#region Misc
 		private Task CreateApiDelay()
 		{
 			return Task.Delay( this.DefaultApiDelay );

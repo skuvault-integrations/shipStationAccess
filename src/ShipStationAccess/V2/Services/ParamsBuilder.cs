@@ -11,8 +11,8 @@ namespace ShipStationAccess.V2.Services
 		public static string CreateNewOrdersParams( DateTime startDate, DateTime endDate )
 		{
 			var endpoint = string.Format( "?{0}={1}&{2}={3}&{4}={5}",
-				ShipStationParam.OrdersCreatedDateFrom.Name, DateTime.SpecifyKind( startDate, DateTimeKind.Utc ).ToString( "yyyy-M-d" ),
-				ShipStationParam.OrdersCreatedDateTo.Name, DateTime.SpecifyKind( endDate, DateTimeKind.Utc ).ToString( "yyyy-M-d" ),
+				ShipStationParam.OrdersCreatedDateFrom.Name, DateTime.SpecifyKind( startDate, DateTimeKind.Utc ).ToString( "yyyy-M-d hh:mm" ),
+				ShipStationParam.OrdersCreatedDateTo.Name, DateTime.SpecifyKind( endDate, DateTimeKind.Utc ).ToString( "yyyy-M-d hh:mm" ),
 				ShipStationParam.OrdersStatus.Name, "unselected" );
 			return endpoint;
 		}
@@ -20,8 +20,8 @@ namespace ShipStationAccess.V2.Services
 		public static string CreateModifiedOrdersParams( DateTime startDate, DateTime endDate )
 		{
 			var endpoint = string.Format( "?{0}={1}&{2}={3}&{4}={5}",
-				ShipStationParam.OrdersModifiedDateFrom.Name, DateTime.SpecifyKind( startDate, DateTimeKind.Utc ).ToString( "yyyy-M-d" ),
-				ShipStationParam.OrdersModifiedDateTo.Name, DateTime.SpecifyKind( endDate, DateTimeKind.Utc ).ToString( "yyyy-M-d" ),
+				ShipStationParam.OrdersModifiedDateFrom.Name, DateTime.SpecifyKind( startDate, DateTimeKind.Utc ).ToString( "yyyy-M-d hh:mm" ),
+				ShipStationParam.OrdersModifiedDateTo.Name, DateTime.SpecifyKind( endDate, DateTimeKind.Utc ).ToString( "yyyy-M-d hh:mm" ),
 				ShipStationParam.OrdersStatus.Name, "unselected" );
 			return endpoint;
 		}
