@@ -10,5 +10,8 @@ namespace ShipStationAccessTests
 
 		[ CsvColumn( Name = "ApiKey", FieldIndex = 2 ) ]
 		public string ApiKey{ get; set; }
+
+		[ CsvColumn( Name = "PartnerKey", FieldIndex = 3 ) ]
+		public string PartnerKey{ get; set; }
 	}
 }

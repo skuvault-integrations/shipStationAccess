@@ -24,14 +24,14 @@ namespace ShipStationAccessTests.Orders
 			var testConfig = cc.Read< TestConfig >( credentialsFilePath, new CsvFileDescription { FirstLineHasColumnNames = true } ).FirstOrDefault();
 
 			if( testConfig != null )
-				this._credentials = new ShipStationCredentials( testConfig.ApiKey, testConfig.ApiSecret );
+				this._credentials = new ShipStationCredentials( testConfig.ApiKey, testConfig.ApiSecret, testConfig.PartnerKey );
 		}
 
 		[ Test ]
 		public void GetOrders()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}

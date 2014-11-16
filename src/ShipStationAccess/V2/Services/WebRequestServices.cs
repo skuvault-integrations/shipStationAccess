@@ -82,6 +82,7 @@ namespace ShipStationAccess.V2.Services
 		{
 			request.Headers.Add( "Authorization", this.CreateAuthenticationHeader() );
 			request.Headers.Add( "X-Mashape-Key", this._credentials.MashapeKey );
+			request.Headers.Add( "x-shipstation-partner", this._credentials.PartnerKey );
 		}
 
 		private string CreateAuthenticationHeader()
