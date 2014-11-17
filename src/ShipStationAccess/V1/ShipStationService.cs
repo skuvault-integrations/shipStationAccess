@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Services.Client;
 using System.Data.Services.Common;
 using System.Net;
 using System.Threading.Tasks;
@@ -16,15 +17,23 @@ namespace ShipStationAccess.V1
 	public class ShipStationService : IShipStationService
 	{
 		public ShipStationEntities Context { get; private set; }
+		private readonly ShipStationCredentials _credentials;
 
 		public ShipStationService( ShipStationCredentials credentials )
 		{
+			this._credentials = credentials;
 			this.Context = this.CreateContext( credentials.UserName, credentials.Password );
+			this.Context.SendingRequest2 += ContextOnSendingRequest2;
 		}
 
 		private ShipStationEntities CreateContext( string userName, string password )
 		{
 			return new ShipStationEntities( new Uri( "https://data.shipstation.com/1.3" ), DataServiceProtocolVersion.V3 ) { Credentials = new NetworkCredential( userName, password ), Timeout = 1800 };
+		}
+
+		private void ContextOnSendingRequest2( object sender, SendingRequest2EventArgs e )
+		{
+			e.RequestMessage.SetHeader( "x-shipstation-partner", this._credentials.PartnerKey );
 		}
 
 		#region Queries

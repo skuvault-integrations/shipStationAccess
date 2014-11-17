@@ -40,8 +40,8 @@ namespace ShipStationAccess.V2.Services
 		public void PostData( ShipStationCommand command, string jsonContent )
 		{
 			var request = this.CreateServicePostRequest( command, jsonContent );
-				using( var response = ( HttpWebResponse )request.GetResponse() )
-					this.LogUpdateInfo( request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+			using( var response = ( HttpWebResponse )request.GetResponse() )
+				this.LogUpdateInfo( request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
 		}
 
 		public async Task PostDataAsync( ShipStationCommand command, string jsonContent )
@@ -82,7 +82,6 @@ namespace ShipStationAccess.V2.Services
 		{
 			request.Headers.Add( "Authorization", this.CreateAuthenticationHeader() );
 			request.Headers.Add( "X-Mashape-Key", this._credentials.MashapeKey );
-			request.Headers.Add( "x-shipstation-partner", this._credentials.PartnerKey );
 		}
 
 		private string CreateAuthenticationHeader()
