@@ -40,6 +40,8 @@ namespace ShipStationAccess.V2.Services
 		public void PostData( ShipStationCommand command, string jsonContent )
 		{
 			var request = this.CreateServicePostRequest( command, jsonContent );
+			this.LogPostInfo( request.RequestUri.AbsoluteUri, jsonContent );
+
 			using( var response = ( HttpWebResponse )request.GetResponse() )
 				this.LogUpdateInfo( request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
 		}
@@ -47,6 +49,8 @@ namespace ShipStationAccess.V2.Services
 		public async Task PostDataAsync( ShipStationCommand command, string jsonContent )
 		{
 			var request = this.CreateServicePostRequest( command, jsonContent );
+			this.LogPostInfo( request.RequestUri.AbsoluteUri, jsonContent );
+
 			using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
 				this.LogUpdateInfo( request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
 		}
@@ -113,6 +117,11 @@ namespace ShipStationAccess.V2.Services
 		private void LogUpdateInfo( string url, HttpStatusCode statusCode, string jsonContent )
 		{
 			this.Log().Trace( "[shipstation]\tPOST call for the url '{0}' has been completed with code '{1}'.\n{2}", url, statusCode, jsonContent );
+		}
+
+		private void LogPostInfo( string url, string jsonContent)
+		{
+			this.Log().Trace( "[shipstation]\tPOST data for the url '{0}':\n{1}", url, jsonContent );
 		}
 		#endregion
 	}
