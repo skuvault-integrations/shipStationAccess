@@ -40,19 +40,19 @@ namespace ShipStationAccess.V2.Services
 		public void PostData( ShipStationCommand command, string jsonContent )
 		{
 			var request = this.CreateServicePostRequest( command, jsonContent );
-			this.LogPostInfo( request.RequestUri.AbsoluteUri, jsonContent );
+			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
 
 			using( var response = ( HttpWebResponse )request.GetResponse() )
-				this.LogUpdateInfo( request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+				this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
 		}
 
 		public async Task PostDataAsync( ShipStationCommand command, string jsonContent )
 		{
 			var request = this.CreateServicePostRequest( command, jsonContent );
-			this.LogPostInfo( request.RequestUri.AbsoluteUri, jsonContent );
+			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
 
 			using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
-				this.LogUpdateInfo( request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+				this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
 		}
 
 		private HttpWebRequest CreateGetServiceRequest( string url )
@@ -114,14 +114,14 @@ namespace ShipStationAccess.V2.Services
 			return result;
 		}
 
-		private void LogUpdateInfo( string url, HttpStatusCode statusCode, string jsonContent )
+		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent )
 		{
-			this.Log().Trace( "[shipstation]\tPOST call for the url '{0}' has been completed with code '{1}'.\n{2}", url, statusCode, jsonContent );
+			this.Log().Trace( "[shipstation]\tPOST call for the apiKey '{0}' and url '{1}' has been completed with code '{2}'.\n{3}", apiKey, url, statusCode, jsonContent );
 		}
 
-		private void LogPostInfo( string url, string jsonContent)
+		private void LogPostInfo( string apiKey, string url, string jsonContent )
 		{
-			this.Log().Trace( "[shipstation]\tPOST data for the url '{0}':\n{1}", url, jsonContent );
+			this.Log().Trace( "[shipstation]\tPOST data for the apiKey '{0}' and url '{1}':\n{2}", apiKey, url, jsonContent );
 		}
 		#endregion
 	}
