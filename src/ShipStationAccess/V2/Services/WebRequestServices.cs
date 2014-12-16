@@ -42,8 +42,16 @@ namespace ShipStationAccess.V2.Services
 			var request = this.CreateServicePostRequest( command, jsonContent );
 			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
 
-			using( var response = ( HttpWebResponse )request.GetResponse() )
-				this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+			try
+			{
+				using( var response = ( HttpWebResponse )request.GetResponse() )
+					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+			}
+			catch( WebException )
+			{
+				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				throw;
+			}
 		}
 
 		public async Task PostDataAsync( ShipStationCommand command, string jsonContent )
@@ -51,8 +59,16 @@ namespace ShipStationAccess.V2.Services
 			var request = this.CreateServicePostRequest( command, jsonContent );
 			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
 
-			using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
-				this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+			try
+			{
+				using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
+					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+			}
+			catch( WebException )
+			{
+				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				throw;
+			}
 		}
 
 		private HttpWebRequest CreateGetServiceRequest( string url )
@@ -122,6 +138,11 @@ namespace ShipStationAccess.V2.Services
 		private void LogPostInfo( string apiKey, string url, string jsonContent )
 		{
 			this.Log().Trace( "[shipstation]\tPOST data for the apiKey '{0}' and url '{1}':\n{2}", apiKey, url, jsonContent );
+		}
+
+		private void LogPostError( string apiKey, string url, string jsonContent )
+		{
+			this.Log().Trace( "[shipstation]\tERROR POSTING data for the apiKey '{0}' and url '{1}':\n{2}", apiKey, url, jsonContent );
 		}
 		#endregion
 	}
