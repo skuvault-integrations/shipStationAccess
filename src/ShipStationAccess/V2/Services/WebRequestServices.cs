@@ -121,7 +121,7 @@ namespace ShipStationAccess.V2.Services
 				var reader = new StreamReader( stream );
 				var jsonResponse = reader.ReadToEnd();
 
-				this.Log().Trace( "[shipstation]\tResponse\t{0} - {1}", response.ResponseUri, jsonResponse );
+				this.Log().Trace( "[shipstation]\tResponse for apiKey '{0}' and url '{1}':\n{2}", this._credentials.ApiKey, response.ResponseUri, jsonResponse );
 
 				if( !String.IsNullOrEmpty( jsonResponse ) )
 					result = jsonResponse.FromJson< T >();
