@@ -25,7 +25,7 @@ $solution_file = "$src_dir\$($project_name).sln"
 use Framework\v4.0.30319 MSBuild
 
 task Clean { 
-	exec { MSBuild "$solution_file" /t:Clean /p:Configuration=Release /p:Platform="Any CPU" /v:quiet } 
+	exec { MSBuild "$solution_file" /t:Clean /p:Configuration=Release /v:quiet } 
 	Remove-Item -force -recurse $build_dir -ErrorAction SilentlyContinue | Out-Null
 }
 
@@ -36,7 +36,7 @@ task Init Clean, {
 }
 
 task Build {
-	exec { MSBuild "$solution_file" /t:Build /p:Configuration=Release /p:Platform="Any CPU" /v:minimal /p:OutDir="$build_artifacts_dir\" }
+	exec { MSBuild "$solution_file" /t:Build /p:Configuration=Release /v:minimal /p:OutDir="$build_artifacts_dir\" }
 }
 
 task Package  {
@@ -87,11 +87,12 @@ task NuGet Package, Version, {
 		<tags>$project_short_name</tags>
 		<dependencies> 
 			<group targetFramework="net45">
-				<dependency id="Netco" version="1.3.1" />
-				<dependency id="Microsoft.Data.Edm" version="5.6.1" />
-				<dependency id="Microsoft.Data.OData" version="5.6.1" />
-				<dependency id="Microsoft.Data.Services.Client" version="5.6.1" />
-				<dependency id="System.Spatial" version="5.6.1" />
+				<dependency id="Netco" version="1.4.3" />
+				<dependency id="CuttingEdge.Conditions" version="1.2.0.0" />
+				<dependency id="Microsoft.Data.Edm" version="5.6.3" />
+				<dependency id="Microsoft.Data.OData" version="5.6.3" />
+				<dependency id="Microsoft.Data.Services.Client" version="5.6.3" />
+				<dependency id="System.Spatial" version="5.6.3" />
 			</group>
 		</dependencies>
 	</metadata>
