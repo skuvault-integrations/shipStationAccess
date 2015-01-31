@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace ShipStationAccess.V2.Models.OrderItem
 {
@@ -30,6 +31,6 @@ namespace ShipStationAccess.V2.Models.OrderItem
 		public string WarehouseLocation{ get; set; }
 
 		[ DataMember( Name = "options" ) ]
-		public string[] Options{ get; set; }
+		public IList< ShipStationOrderItemOption > Options{ get; set; }
 	}
 }

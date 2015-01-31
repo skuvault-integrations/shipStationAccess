@@ -9,6 +9,6 @@ namespace ShipStationAccess.V2.Models.Order
 		public string Contents{ get; set; }
 
 		[ DataMember( Name = "customsItems" ) ]
-		public string CustomsItems{ get; set; }
+		public ShipStationCustomItems CustomsItems{ get; set; }
 	}
 }

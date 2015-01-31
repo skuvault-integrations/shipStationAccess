@@ -98,6 +98,8 @@
     <Compile Include="V2\Models\Command\ShipStationCommand.cs" />
     <Compile Include="V2\Models\Command\ShipStationCommandConfig.cs" />
     <Compile Include="V2\Models\Command\ShipStationParam.cs" />
+    <Compile Include="V2\Models\OrderItem\ShipStationOrderItemOption.cs" />
+    <Compile Include="V2\Models\Order\ShipStationCustomItems.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrderAdvancedOptions.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrderDimensions.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrderInsuranceOptions.cs" />
