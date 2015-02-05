@@ -7,6 +7,7 @@ using NUnit.Framework;
 using ShipStationAccess;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccessTests.Orders
 {
@@ -31,7 +32,7 @@ namespace ShipStationAccessTests.Orders
 		public void GetOrders()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -2 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -5 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}

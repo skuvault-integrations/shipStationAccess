@@ -21,10 +21,16 @@ namespace ShipStationAccess.V2.Services
 
 		public T GetResponse< T >( ShipStationCommand command, string commandParams )
 		{
-			T result;
+			T result = default( T );
 			var request = this.CreateGetServiceRequest( string.Concat( this._credentials.Host, command.Command, commandParams ) );
-			using( var response = request.GetResponse() )
-				result = ParseResponse< T >( response );
+			try
+			{
+				using( var response = request.GetResponse() )
+					result = ParseResponse< T >( response );
+			}
+			catch( WebException e )
+			{
+			}
 			return result;
 		}
 
