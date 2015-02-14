@@ -35,13 +35,13 @@ namespace ShipStationAccess.V2.Services
 
 		private static string SerializeDateTime( DateTime utcTime )
 		{
-			if( utcTime.Kind == DateTimeKind.Unspecified )
-				utcTime = DateTime.SpecifyKind( utcTime, DateTimeKind.Local );
+			if( utcTime.Kind == DateTimeKind.Unspecified || utcTime.Kind == DateTimeKind.Local )
+				utcTime = DateTime.SpecifyKind( utcTime, DateTimeKind.Utc );
 
 			if( utcTime == DateTime.MinValue || utcTime == DateTime.MaxValue || utcTime == default( DateTime ) )
 				return utcTime.ToString( CultureInfo.InvariantCulture );
 
-			return TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Local, _pacificTimeZone ).ToString( CultureInfo.InvariantCulture );
+			return TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone ).ToString( CultureInfo.InvariantCulture );
 		}
 		#endregion
 	}
