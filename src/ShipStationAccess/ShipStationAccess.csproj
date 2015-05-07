@@ -94,6 +94,7 @@
     <Compile Include="V1\ShipStationService.cs" />
     <Compile Include="V2\IShipStationService.cs" />
     <Compile Include="V2\Misc\ActionPolicies.cs" />
+    <Compile Include="V2\Misc\ShipstationLogger.cs" />
     <Compile Include="V2\Models\Command\ShipStationCommand.cs" />
     <Compile Include="V2\Models\Command\ShipStationCommandConfig.cs" />
     <Compile Include="V2\Models\Command\ShipStationParam.cs" />
