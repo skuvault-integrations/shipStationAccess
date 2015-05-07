@@ -111,6 +111,7 @@
     <Compile Include="V2\Models\OrderItem\ShipStationOrderItem.cs" />
     <Compile Include="V2\Models\Store\ShipStationStore.cs" />
     <Compile Include="V2\Models\Store\ShipStationStores.cs" />
+    <Compile Include="V2\Services\DateTimeExtensions.cs" />
     <Compile Include="V2\Services\JsonSerialization.cs" />
     <Compile Include="V2\Services\ParamsBuilder.cs" />
     <Compile Include="V2\Services\WebRequestServices.cs" />
