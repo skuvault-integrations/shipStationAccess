@@ -3,8 +3,6 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Netco.Logging;
-using ServiceStack;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
@@ -25,7 +23,7 @@ namespace ShipStationAccess.V2.Services
 			T result;
 			var request = this.CreateGetServiceRequest( string.Concat( this._credentials.Host, command.Command, commandParams ) );
 			using( var response = request.GetResponse() )
-				result = ParseResponse< T >( response );
+				result = this.ParseResponse< T >( response );
 
 			return result;
 		}
@@ -35,7 +33,7 @@ namespace ShipStationAccess.V2.Services
 			T result;
 			var request = this.CreateGetServiceRequest( string.Concat( this._credentials.Host, command.Command, commandParams ) );
 			using( var response = await request.GetResponseAsync() )
-				result = ParseResponse< T >( response );
+				result = this.ParseResponse< T >( response );
 			return result;
 		}
 
@@ -125,8 +123,8 @@ namespace ShipStationAccess.V2.Services
 
 				ShipStationLogger.Log.Trace( "[shipstation]\tResponse for apiKey '{0}' and url '{1}':\n{2}", this._credentials.ApiKey, response.ResponseUri, jsonResponse );
 
-				if( !String.IsNullOrEmpty( jsonResponse ) )
-					result = jsonResponse.FromJson< T >();
+				if( !string.IsNullOrEmpty( jsonResponse ) )
+					result = jsonResponse.DeserializeJson< T >();
 			}
 
 			return result;

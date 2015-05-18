@@ -24,6 +24,16 @@ namespace ShipStationAccess.V2.Services
 			return JsonSerializer.SerializeToString( @object );
 		}
 
+		public static T DeserializeJson< T >( this string jsonContent )
+		{
+			return JsonSerializer.DeserializeFromString< T >( jsonContent );
+		}
+
+		public static DateTime FromJsonToDateTime( this string jsonDate )
+		{
+			return DateTime.Parse( jsonDate.Trim( '"' ) ).PstToUtc();
+		}
+
 		#region Custom serialization
 		private static string SerializeDateTime( DateTime? dateTimeNullable )
 		{
