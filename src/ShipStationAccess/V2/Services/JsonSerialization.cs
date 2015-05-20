@@ -17,6 +17,7 @@ namespace ShipStationAccess.V2.Services
 			JsConfig.ConvertObjectTypesIntoStringDictionary = true;
 			JsConfig< DateTime >.SerializeFn = SerializeDateTime;
 			JsConfig< DateTime? >.SerializeFn = SerializeDateTime;
+			JsConfig< DateTime >.DeSerializeFn = DeserializeDateTime;
 		}
 
 		public static string SerializeToJson( this object @object )
@@ -27,11 +28,6 @@ namespace ShipStationAccess.V2.Services
 		public static T DeserializeJson< T >( this string jsonContent )
 		{
 			return JsonSerializer.DeserializeFromString< T >( jsonContent );
-		}
-
-		public static DateTime FromJsonToDateTime( this string jsonDate )
-		{
-			return DateTime.Parse( jsonDate.Trim( '"' ) ).PstToUtc();
 		}
 
 		#region Custom serialization
@@ -52,6 +48,36 @@ namespace ShipStationAccess.V2.Services
 				return utcTime.ToString( CultureInfo.InvariantCulture );
 
 			return TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone ).ToString( CultureInfo.InvariantCulture );
+		}
+
+		
+		private static DateTime DeserializeDateTime( string pstStringTime ) 
+		{
+			if( string.IsNullOrWhiteSpace( pstStringTime ) )
+				return default( DateTime );
+
+			DateTime pstTime;
+			if( !DateTime.TryParse( pstStringTime , out pstTime ) )
+				return pstTime;
+
+ 			if( pstTime == DateTime.MinValue || pstTime == DateTime.MaxValue || pstTime == default( DateTime ) )
+				return pstTime;
+
+			var pacificTimeZone = _pacificTimeZone;
+
+			if( pacificTimeZone.IsInvalidTime( pstTime ) || pacificTimeZone.IsAmbiguousTime( pstTime ) )
+			{
+				pstTime = pstTime.AddHours( 1 );
+			}
+
+			if( pstTime.Kind != DateTimeKind.Unspecified )
+				pstTime = DateTime.SpecifyKind( pstTime, DateTimeKind.Unspecified );
+			var utcDate = TimeZoneInfo.ConvertTime( pstTime, pacificTimeZone, TimeZoneInfo.Utc );
+
+			if( pacificTimeZone.IsDaylightSavingTime( utcDate ) )
+				utcDate -= TimeSpan.FromHours( 1 );
+
+			return utcDate;
 		}
 		#endregion
 	}

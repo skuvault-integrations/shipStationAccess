@@ -41,7 +41,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrdersAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddMinutes( -5 ), DateTime.UtcNow );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
