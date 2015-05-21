@@ -74,9 +74,6 @@ namespace ShipStationAccess.V2.Services
 				pstTime = DateTime.SpecifyKind( pstTime, DateTimeKind.Unspecified );
 			var utcDate = TimeZoneInfo.ConvertTime( pstTime, pacificTimeZone, TimeZoneInfo.Utc );
 
-			if( pacificTimeZone.IsDaylightSavingTime( utcDate ) )
-				utcDate -= TimeSpan.FromHours( 1 );
-
 			return utcDate;
 		}
 		#endregion

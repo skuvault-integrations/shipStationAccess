@@ -81,7 +81,7 @@ namespace ShipStationAccess.V2
 				} );
 
 				//API requirement
-				this.CreateApiDelay().Wait();
+				await this.CreateApiDelay();
 			} while( hasOrders );
 
 			await this.FindMarketplaceIdsAsync( orders );
