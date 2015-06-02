@@ -11,11 +11,10 @@ using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccess.V2
 {
-	public sealed class ShipStationService : IShipStationService
+	public sealed class ShipStationService: IShipStationService
 	{
 		private readonly WebRequestServices _webRequestServices;
 		private const int RequestMaxLimit = 500;
-		private readonly TimeSpan DefaultApiDelay = TimeSpan.FromMilliseconds( 150 );
 
 		public ShipStationService( ShipStationCredentials credentials )
 		{
@@ -46,9 +45,6 @@ namespace ShipStationAccess.V2
 					orders.AddRange( newOrdersWithinPage.Orders.Union( modifiedOrdersWithinPage.Orders ).ToList() );
 					hasOrders = newOrdersWithinPage.Orders.Any() || modifiedOrdersWithinPage.Orders.Any();
 				} );
-
-				//API requirement
-				this.CreateApiDelay().Wait();
 			} while( hasOrders );
 
 			this.FindMarketplaceIds( orders );
@@ -79,9 +75,6 @@ namespace ShipStationAccess.V2
 					orders.AddRange( newOrdersWithinPage.Orders.Union( modifiedOrdersWithinPage.Orders ).ToList() );
 					hasOrders = newOrdersWithinPage.Orders.Any() || modifiedOrdersWithinPage.Orders.Any();
 				} );
-
-				//API requirement
-				await this.CreateApiDelay();
 			} while( hasOrders );
 
 			await this.FindMarketplaceIdsAsync( orders );
@@ -150,11 +143,6 @@ namespace ShipStationAccess.V2
 				if( store != null )
 					order.MarketplaceId = store.MarketplaceId;
 			}
-		}
-
-		private Task CreateApiDelay()
-		{
-			return Task.Delay( this.DefaultApiDelay );
 		}
 		#endregion
 	}

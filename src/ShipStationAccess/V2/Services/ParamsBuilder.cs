@@ -11,16 +11,16 @@ namespace ShipStationAccess.V2.Services
 		public static string CreateNewOrdersParams( DateTime startDate, DateTime endDate )
 		{
 			var endpoint = string.Format( "?{0}={1}&{2}={3}",
-				ShipStationParam.OrdersCreatedDateFrom.Name, startDate.ToString( "yyyy-M-d hh:mm" ),
-				ShipStationParam.OrdersCreatedDateTo.Name, endDate.ToString( "yyyy-M-d hh:mm" ));
+				ShipStationParam.OrdersCreatedDateFrom.Name, startDate.ToString( "s" ),
+				ShipStationParam.OrdersCreatedDateTo.Name, endDate.ToString( "s" ));
 			return endpoint;
 		}
 
 		public static string CreateModifiedOrdersParams( DateTime startDate, DateTime endDate )
 		{
 			var endpoint = string.Format( "?{0}={1}&{2}={3}",
-				ShipStationParam.OrdersModifiedDateFrom.Name, startDate.ToString( "yyyy-M-d hh:mm" ),
-				ShipStationParam.OrdersModifiedDateTo.Name, endDate.ToString( "yyyy-M-d hh:mm" ));
+				ShipStationParam.OrdersModifiedDateFrom.Name, startDate.ToString( "s" ),
+				ShipStationParam.OrdersModifiedDateTo.Name, endDate.ToString( "s" ));
 			return endpoint;
 		}
 

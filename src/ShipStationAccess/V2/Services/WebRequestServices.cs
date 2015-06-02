@@ -20,21 +20,60 @@ namespace ShipStationAccess.V2.Services
 
 		public T GetResponse< T >( ShipStationCommand command, string commandParams )
 		{
-			T result;
-			var request = this.CreateGetServiceRequest( string.Concat( this._credentials.Host, command.Command, commandParams ) );
-			using( var response = request.GetResponse() )
-				result = this.ParseResponse< T >( response );
+			while( true )
+			{
+				var request = this.CreateGetServiceRequest( string.Concat( this._credentials.Host, command.Command, commandParams ) );
+				var resetDelay = 0;
+				try
+				{
+					using( var response = request.GetResponse() )
+					{
+						var shipStationResponse = ProcessResponse( response );
+						if( !shipStationResponse.IsThrottled )
+							return this.ParseResponse< T >( shipStationResponse.Data );
 
-			return result;
+						resetDelay = shipStationResponse.ResetInSeconds;
+					}
+				}
+				catch( WebException x )
+				{
+					var response = x.Response;
+					var statusCode = Convert.ToInt32( ( ( HttpWebResponse )response ).StatusCode );
+					if( statusCode == 429 )
+						resetDelay = GetLimitReset( response );
+				}
+
+				this.CreateDelay( resetDelay ).Wait();
+			}
 		}
 
 		public async Task< T > GetResponseAsync< T >( ShipStationCommand command, string commandParams )
 		{
-			T result;
-			var request = this.CreateGetServiceRequest( string.Concat( this._credentials.Host, command.Command, commandParams ) );
-			using( var response = await request.GetResponseAsync() )
-				result = this.ParseResponse< T >( response );
-			return result;
+			while( true )
+			{
+				var request = this.CreateGetServiceRequest( string.Concat( this._credentials.Host, command.Command, commandParams ) );
+				var resetDelay = 0;
+				try
+				{
+					using( var response = await request.GetResponseAsync() )
+					{
+						var shipStationResponse = ProcessResponse( response );
+						if( !shipStationResponse.IsThrottled )
+							return this.ParseResponse< T >( shipStationResponse.Data );
+
+						resetDelay = shipStationResponse.ResetInSeconds;
+					}
+				}
+				catch( WebException x )
+				{
+					var response = x.Response;
+					var statusCode = Convert.ToInt32( ( ( HttpWebResponse )response ).StatusCode );
+					if( statusCode == 429 )
+						resetDelay = GetLimitReset( response );
+				}
+
+				await this.CreateDelay( resetDelay );
+			}
 		}
 
 		public void PostData( ShipStationCommand command, string jsonContent )
@@ -101,33 +140,65 @@ namespace ShipStationAccess.V2.Services
 		private void CreateRequestHeaders( WebRequest request )
 		{
 			request.Headers.Add( "Authorization", this.CreateAuthenticationHeader() );
-			request.Headers.Add( "X-Mashape-Key", this._credentials.MashapeKey );
 		}
 
 		private string CreateAuthenticationHeader()
 		{
 			var authInfo = string.Concat( this._credentials.ApiKey, ":", this._credentials.ApiSecret );
-			authInfo = Convert.ToBase64String( Encoding.Default.GetBytes( authInfo ) );
 
-			return string.Concat( "Basic ", authInfo );
+			return string.Concat( "Basic ", Convert.ToBase64String( Encoding.Default.GetBytes( authInfo ) ) );
 		}
 
-		private T ParseResponse< T >( WebResponse response )
+		private T ParseResponse< T >( string jsonData )
 		{
-			var result = default( T );
+			var result = default(T);
 
+			if( !string.IsNullOrEmpty( jsonData ) )
+				result = jsonData.DeserializeJson< T >();
+
+			return result;
+		}
+
+		private Task CreateDelay( int seconds )
+		{
+			return Task.Delay( seconds * 1000 );
+		}
+
+		private ShipStationResponse ProcessResponse( WebResponse response )
+		{
 			using( var stream = response.GetResponseStream() )
 			{
 				var reader = new StreamReader( stream );
 				var jsonResponse = reader.ReadToEnd();
+				var resetInSeconds = GetLimitReset( response );
 
-				ShipStationLogger.Log.Trace( "[shipstation]\tResponse for apiKey '{0}' and url '{1}':\n{2}", this._credentials.ApiKey, response.ResponseUri, jsonResponse );
+				var isThrottled = jsonResponse.Contains( "\"message\": \"Too Many Requests\"" );
 
-				if( !string.IsNullOrEmpty( jsonResponse ) )
-					result = jsonResponse.DeserializeJson< T >();
+				ShipStationLogger.Log.Trace( "[shipstation]\tResponse for apiKey '{0}' and url '{1}':\n{2} - {3}\n{4}",
+					this._credentials.ApiKey, response.ResponseUri, resetInSeconds, isThrottled, jsonResponse );
+
+				return new ShipStationResponse
+				{
+					Data = jsonResponse, ResetInSeconds = resetInSeconds,
+					IsThrottled = isThrottled
+				};
 			}
+		}
 
-			return result;
+		private static int GetLimitReset( WebResponse response )
+		{
+			var resetInSecondsString = response.Headers.Get( "X-Rate-Limit-Reset" );
+			var resetInSeconds = 0;
+			if( !string.IsNullOrWhiteSpace( resetInSecondsString ) )
+				int.TryParse( resetInSecondsString, out resetInSeconds );
+			return resetInSeconds;
+		}
+
+		private class ShipStationResponse
+		{
+			internal string Data;
+			internal int ResetInSeconds;
+			internal bool IsThrottled;
 		}
 
 		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent )

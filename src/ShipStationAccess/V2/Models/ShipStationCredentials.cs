@@ -17,7 +17,7 @@ namespace ShipStationAccess.V2.Models
 			this.ApiKey = apiKey;
 			this.ApiSecret = apiSecret;
 			this.MashapeKey = "mtoHg8NaKLmshIo69qYeENy89Rtdp1yhs7RjsnuVTdqEW0hlIP";
-			this.Host = "https://ssapi.shipstation.com/";
+			this.Host = "https://ssapi.shipstation.com";
 		}
 	}
 }
