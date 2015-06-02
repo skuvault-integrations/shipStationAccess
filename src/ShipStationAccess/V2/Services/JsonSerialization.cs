@@ -23,7 +23,8 @@ namespace ShipStationAccess.V2.Services
 
 		public static string SerializeToJson( this object @object )
 		{
-			return JsonSerializer.SerializeToString( @object );
+			var serializeToString = JsonSerializer.SerializeToString( @object );
+			return serializeToString;
 		}
 
 		public static T DeserializeJson< T >( this string jsonContent )
