@@ -15,6 +15,7 @@ namespace ShipStationAccess.V2.Services
 			JsConfig.AlwaysUseUtc = true;
 			JsConfig.AssumeUtc = true;
 			JsConfig.ConvertObjectTypesIntoStringDictionary = true;
+			JsConfig.IncludeNullValues = true;
 			JsConfig< DateTime >.SerializeFn = SerializeDateTime;
 			JsConfig< DateTime? >.SerializeFn = SerializeDateTime;
 			JsConfig< DateTime >.DeSerializeFn = DeserializeDateTime;
@@ -47,7 +48,7 @@ namespace ShipStationAccess.V2.Services
 			if( utcTime == DateTime.MinValue || utcTime == DateTime.MaxValue || utcTime == default( DateTime ) )
 				return utcTime.ToString( CultureInfo.InvariantCulture );
 
-			return TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone ).ToString( CultureInfo.InvariantCulture );
+			return TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone ).ToString( "s", CultureInfo.InvariantCulture );
 		}
 
 		
