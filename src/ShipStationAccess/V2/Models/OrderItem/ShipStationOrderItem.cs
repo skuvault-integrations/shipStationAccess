@@ -15,7 +15,7 @@ namespace ShipStationAccess.V2.Models.OrderItem
 		[ DataMember( Name = "sku" ) ]
 		public string Sku{ get; set; }
 
-		[ DataMember( Name = "шmageUrl" ) ]
+		[ DataMember( Name = "imageUrl" ) ]
 		public string ImageUrl{ get; set; }
 
 		[ DataMember( Name = "weight" ) ]
