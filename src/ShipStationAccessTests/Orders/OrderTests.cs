@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using LINQtoCSV;
+using Netco.Extensions;
 using Netco.Logging;
 using NUnit.Framework;
 using ShipStationAccess;
-using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
 
@@ -37,7 +37,7 @@ namespace ShipStationAccessTests.Orders
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow );
 
-			orders.Count().Should().BeGreaterThan( 0 );;
+			orders.Count().Should().BeGreaterThan( 0 );
 		}
 
 		[ Test ]
@@ -53,17 +53,16 @@ namespace ShipStationAccessTests.Orders
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var endDate = DateTime.UtcNow; //new DateTime( 2015, 06, 01, 22, 45, 00, DateTimeKind.Utc );
-			
+
 			var orders = service.GetOrders( endDate.AddDays( -1 ), endDate );
 
 			var tasks = new List< Task >();
 
 			foreach( var i in Enumerable.Range( 0, 500 ) )
 			{
-				ShipStationLogger.Log.Trace( "************************************ {0} Run {1}", DateTime.Now, i );
 				tasks.Add( service.GetOrdersAsync( endDate.AddDays( -1 ), endDate ) );
 			}
- 
+
 			await Task.WhenAll( tasks );
 
 			orders.Count().Should().BeGreaterThan( 0 );
@@ -74,7 +73,7 @@ namespace ShipStationAccessTests.Orders
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
-			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
+			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
 				return;
@@ -88,13 +87,51 @@ namespace ShipStationAccessTests.Orders
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
-			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
+			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
 				return;
 
 			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(30)";
 			await service.UpdateOrderAsync( orderToChange );
+		}
+
+		[ Test ]
+		public void UpdateOrderOnGetOrders()
+		{
+			var rand = new Random();
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			Func< ShipStationOrder, ShipStationOrder > updateOrderLocation = o =>
+			{
+				if( o.Items.Count == 0 )
+					return o;
+
+				o.Items[ 0 ].WarehouseLocation = "AA{0}({1})".FormatWith( rand.Next( 1, 99 ), rand.Next( 1, 50 ) );
+				service.UpdateOrder( o );
+				return o;
+			};
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -2 ), DateTime.UtcNow, updateOrderLocation );
+
+			orders.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public async Task UpdateOrderOnGetOrdersAsync()
+		{
+			var rand = new Random();
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			Func< ShipStationOrder, Task< ShipStationOrder > > updateOrderLocation = async o =>
+			{
+				if( o.Items.Count == 0 )
+					return o;
+
+				o.Items[ 0 ].WarehouseLocation = "AA{0}({1})".FormatWith( rand.Next( 1, 99 ), rand.Next( 1, 50 ) );
+				await service.UpdateOrderAsync( o );
+				return o;
+			};
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -2 ), DateTime.UtcNow, updateOrderLocation );
+
+			orders.Count().Should().BeGreaterThan( 0 );
 		}
 
 		[ Test ]

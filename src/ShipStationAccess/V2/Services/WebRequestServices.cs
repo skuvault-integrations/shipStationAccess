@@ -79,16 +79,16 @@ namespace ShipStationAccess.V2.Services
 		public void PostData( ShipStationCommand command, string jsonContent )
 		{
 			var request = this.CreateServicePostRequest( command, jsonContent );
-			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+//			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
 
 			try
 			{
 				using( var response = ( HttpWebResponse )request.GetResponse() )
 					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
 			}
-			catch( WebException )
+			catch( WebException x )
 			{
-				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent, x );
 				throw;
 			}
 		}
@@ -103,9 +103,9 @@ namespace ShipStationAccess.V2.Services
 				using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
 					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
 			}
-			catch( WebException )
+			catch( WebException x )
 			{
-				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent, x );
 				throw;
 			}
 		}
@@ -203,17 +203,27 @@ namespace ShipStationAccess.V2.Services
 
 		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tPOST call for the apiKey '{0}' and url '{1}' has been completed with code '{2}'.\n{3}", apiKey, url, statusCode, jsonContent );
+			ShipStationLogger.Log.Trace( "[shipstation]\tPOSTing call for the apiKey '{0}' and url '{1}' has been completed with code '{2}'.\n{3}", apiKey, url, statusCode, jsonContent );
 		}
 
 		private void LogPostInfo( string apiKey, string url, string jsonContent )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tPOST data for the apiKey '{0}' and url '{1}':\n{2}", apiKey, url, jsonContent );
+			ShipStationLogger.Log.Trace( "[shipstation]\tPOSTed data for the apiKey '{0}' and url '{1}':\n{2}", apiKey, url, jsonContent );
 		}
 
-		private void LogPostError( string apiKey, string url, string jsonContent )
+		private void LogPostError( string apiKey, string url, string jsonContent, WebException x )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTING data for the apiKey '{0}' and url '{1}':\n{2}", apiKey, url, jsonContent );
+			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTing data for the apiKey '{0}', url '{1}' and response '{2}':\n{3}", apiKey, url, GetWebExceptionInfo( x ).Item3, jsonContent );
+		}
+
+		private Tuple< Uri, HttpStatusCode, string > GetWebExceptionInfo( WebException x )
+		{
+			var response = x.Response;
+			using( var reader = new StreamReader( response.GetResponseStream() ) )
+			{
+				var message = reader.ReadToEnd();
+				return Tuple.Create( response.ResponseUri, ( ( HttpWebResponse )response ).StatusCode, message );
+			}
 		}
 		#endregion
 	}

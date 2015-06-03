@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Netco.Extensions;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
@@ -26,10 +27,25 @@ namespace ShipStationAccess.V2
 		{
 			var pagesCount = 1;
 			var orders = new List< ShipStationOrder >();
-			var processOrderIds = new HashSet< long >();
+			var processedOrderIds = new HashSet< long >();
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom.UtcToPst(), dateTo.UtcToPst() );
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom.UtcToPst(), dateTo.UtcToPst() );
 			var hasOrders = true;
+
+			Action< ShipStationOrders > processOrders = sorders =>
+			{
+				foreach( var order in sorders.Orders )
+				{
+					var curOrder = order;
+					if( processedOrderIds.Contains( curOrder.OrderId ) )
+						continue;
+
+					if( processOrder != null )
+						curOrder = processOrder( curOrder );
+					orders.Add( curOrder );
+					processedOrderIds.Add( curOrder.OrderId );
+				}
+			};
 
 			do
 			{
@@ -41,10 +57,10 @@ namespace ShipStationAccess.V2
 				ActionPolicies.Get.Do( () =>
 				{
 					var newOrdersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, compositeNewOrdersEndpoint );
-					ProcessOrders( newOrdersWithinPage, orders, processOrderIds, processOrder );
+					processOrders( newOrdersWithinPage );
 
 					var modifiedOrdersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, compositeModifiedOrdersEndpoint );
-					ProcessOrders( modifiedOrdersWithinPage, orders, processOrderIds, processOrder );
+					processOrders( modifiedOrdersWithinPage );
 
 					hasOrders = newOrdersWithinPage.Orders.Any() || modifiedOrdersWithinPage.Orders.Any();
 				} );
@@ -53,21 +69,6 @@ namespace ShipStationAccess.V2
 			this.FindMarketplaceIds( orders );
 
 			return orders;
-		}
-
-		private static void ProcessOrders( ShipStationOrders newOrdersWithinPage, List< ShipStationOrder > orders, HashSet< long > processedOrderIds, Func< ShipStationOrder, ShipStationOrder > processOrder )
-		{
-			foreach( var order in newOrdersWithinPage.Orders )
-			{
-				var curOrder = order;
-				if( processedOrderIds.Contains( curOrder.OrderId ) )
-					continue;
-
-				if( processOrder != null )
-					curOrder = processOrder( order );
-				orders.Add( curOrder );
-				processedOrderIds.Add( curOrder.OrderId );
-			}
 		}
 
 		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null )
@@ -79,6 +80,27 @@ namespace ShipStationAccess.V2
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom.UtcToPst(), dateTo.UtcToPst() );
 			var hasOrders = true;
 
+			Func< ShipStationOrders, Task > processOrders = async sorders =>
+			{
+				var processedOrders = await sorders.Orders.ProcessInBatchAsync( 50, async o =>
+				{
+					var curOrder = o;
+					if( processedOrderIds.Contains( curOrder.OrderId ) )
+						return null;
+
+					if( processOrder != null )
+						curOrder = await processOrder( curOrder );
+
+					return curOrder;
+				} );
+
+				foreach( var order in processedOrders )
+				{
+					orders.Add( order );
+					processedOrderIds.Add( order.OrderId );
+				}
+			};
+
 			do
 			{
 				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( pagesCount, RequestMaxLimit ) );
@@ -89,10 +111,10 @@ namespace ShipStationAccess.V2
 				await ActionPolicies.GetAsync.Do( async () =>
 				{
 					var newOrdersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, compositeNewOrdersEndpoint );
-					await ProcessOrders( newOrdersWithinPage, orders, processedOrderIds, processOrder );
+					await processOrders( newOrdersWithinPage );
 					var modifiedOrdersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, compositeModifiedOrdersEndpoint );
+					await processOrders( modifiedOrdersWithinPage );
 
-					orders.AddRange( newOrdersWithinPage.Orders.Union( modifiedOrdersWithinPage.Orders ).ToList() );
 					hasOrders = newOrdersWithinPage.Orders.Any() || modifiedOrdersWithinPage.Orders.Any();
 				} );
 			} while( hasOrders );
@@ -101,31 +123,22 @@ namespace ShipStationAccess.V2
 
 			return orders;
 		}
-
-		private static async Task ProcessOrders( ShipStationOrders newOrdersWithinPage, List< ShipStationOrder > orders, HashSet< long > processedOrderIds, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder )
-		{
-			foreach( var order in newOrdersWithinPage.Orders )
-			{
-				var curOrder = order;
-				if( processedOrderIds.Contains( curOrder.OrderId ) )
-					continue;
-
-				if( processOrder != null )
-					curOrder = await processOrder( order );
-				orders.Add( curOrder );
-				processedOrderIds.Add( curOrder.OrderId );
-			}
-		}
 		#endregion
 
 		#region Update Orders
 		public void UpdateOrder( ShipStationOrder order )
 		{
+			if( !order.IsValid() )
+				return;
+
 			ActionPolicies.Submit.Do( () => this._webRequestServices.PostData( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() ) );
 		}
 
 		public async Task UpdateOrderAsync( ShipStationOrder order )
 		{
+			if( !order.IsValid() )
+				return;
+
 			await ActionPolicies.SubmitAsync.Do( async () =>
 			{
 				await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() );

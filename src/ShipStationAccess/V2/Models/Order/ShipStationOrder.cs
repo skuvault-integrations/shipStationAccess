@@ -21,10 +21,10 @@ namespace ShipStationAccess.V2.Models.Order
 		public DateTime OrderDate{ get; set; }
 
 		[ DataMember( Name = "paymentDate" ) ]
-		public DateTime PaymentDate{ get; set; }
+		public DateTime? PaymentDate{ get; set; }
 
 		[ DataMember( Name = "shipDate" ) ]
-		public DateTime ShipDate{ get; set; }
+		public DateTime? ShipDate{ get; set; }
 
 		[ DataMember( Name = "amountPaid" ) ]
 		public decimal AmountPaid{ get; set; }
@@ -141,6 +141,28 @@ namespace ShipStationAccess.V2.Models.Order
 			return !Equals( left, right );
 		}
 		#endregion
+	}
+
+	public static class ShipStationOrderExtensions
+	{
+		public static bool IsValid( this ShipStationOrder order )
+		{
+			if( order == null )
+				return false;
+
+			var shipTo = order.ShippingAddress;
+			if( shipTo == null )
+				return false;
+
+			if( string.IsNullOrEmpty( shipTo.Name ) || string.IsNullOrWhiteSpace( shipTo.Street1 ) || string.IsNullOrWhiteSpace( shipTo.City ) || string.IsNullOrWhiteSpace( shipTo.Country ) )
+				return false;
+
+			var isInUs = shipTo.Country.Equals( "US", StringComparison.OrdinalIgnoreCase);
+			if( isInUs && ( string.IsNullOrWhiteSpace( shipTo.PostalCode ) || string.IsNullOrWhiteSpace( shipTo.State ) ) )
+				return false;
+
+			return true;
+		}
 	}
 
 	public enum ShipStationOrderStatusEnum
