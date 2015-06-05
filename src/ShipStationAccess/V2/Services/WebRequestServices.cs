@@ -38,7 +38,7 @@ namespace ShipStationAccess.V2.Services
 				catch( WebException x )
 				{
 					var response = x.Response;
-					var statusCode = Convert.ToInt32( ( ( HttpWebResponse )response ).StatusCode );
+					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
 					if( statusCode == 429 )
 						resetDelay = GetLimitReset( response );
 				}
@@ -67,7 +67,7 @@ namespace ShipStationAccess.V2.Services
 				catch( WebException x )
 				{
 					var response = x.Response;
-					var statusCode = Convert.ToInt32( ( ( HttpWebResponse )response ).StatusCode );
+					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
 					if( statusCode == 429 )
 						resetDelay = GetLimitReset( response );
 				}
@@ -88,7 +88,7 @@ namespace ShipStationAccess.V2.Services
 			}
 			catch( WebException x )
 			{
-				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent, x );
+				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
 				throw;
 			}
 		}
@@ -105,7 +105,7 @@ namespace ShipStationAccess.V2.Services
 			}
 			catch( WebException x )
 			{
-				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent, x );
+				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
 				throw;
 			}
 		}
@@ -174,7 +174,7 @@ namespace ShipStationAccess.V2.Services
 
 				var isThrottled = jsonResponse.Contains( "\"message\": \"Too Many Requests\"" );
 
-				ShipStationLogger.Log.Trace( "[shipstation]\tResponse for apiKey '{0}' and url '{1}':\n{2} - {3}\n{4}",
+				ShipStationLogger.Log.Trace( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}':\n{resetInSeconds} - {isThrottled}\n{response}",
 					this._credentials.ApiKey, response.ResponseUri, resetInSeconds, isThrottled, jsonResponse );
 
 				return new ShipStationResponse
@@ -203,27 +203,17 @@ namespace ShipStationAccess.V2.Services
 
 		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tPOSTing call for the apiKey '{0}' and url '{1}' has been completed with code '{2}'.\n{3}", apiKey, url, statusCode, jsonContent );
+			ShipStationLogger.Log.Trace( "[shipstation]\tPOSTing call for the apiKey '{apiKey}' and url '{url}' has been completed with code '{code}'.\n{content}", apiKey, url, Convert.ToInt32( statusCode ), jsonContent );
 		}
 
 		private void LogPostInfo( string apiKey, string url, string jsonContent )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tPOSTed data for the apiKey '{0}' and url '{1}':\n{2}", apiKey, url, jsonContent );
+			ShipStationLogger.Log.Trace( "[shipstation]\tPOSTed data for the apiKey '{apiKey}' and url '{url}':\n{jsonContent}", apiKey, url, jsonContent );
 		}
 
-		private void LogPostError( string apiKey, string url, string jsonContent, WebException x )
+		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, WebException x )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTing data for the apiKey '{0}', url '{1}' and response '{2}':\n{3}", apiKey, url, GetWebExceptionInfo( x ).Item3, jsonContent );
-		}
-
-		private Tuple< Uri, HttpStatusCode, string > GetWebExceptionInfo( WebException x )
-		{
-			var response = x.Response;
-			using( var reader = new StreamReader( response.GetResponseStream() ) )
-			{
-				var message = reader.ReadToEnd();
-				return Tuple.Create( response.ResponseUri, ( ( HttpWebResponse )response ).StatusCode, message );
-			}
+			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, x.Response.GetResponseString(), Convert.ToInt32( statusCode ), jsonContent );
 		}
 		#endregion
 	}

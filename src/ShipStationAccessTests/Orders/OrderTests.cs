@@ -6,7 +6,9 @@ using FluentAssertions;
 using LINQtoCSV;
 using Netco.Extensions;
 using Netco.Logging;
+using Netco.Logging.SerilogIntegration;
 using NUnit.Framework;
+using Serilog;
 using ShipStationAccess;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
@@ -22,7 +24,11 @@ namespace ShipStationAccessTests.Orders
 		public void Init()
 		{
 			const string credentialsFilePath = @"..\..\Files\ShipStationCredentials.csv";
-			NetcoLogger.LoggerFactory = new ConsoleLoggerFactory();
+			Log.Logger = new LoggerConfiguration()
+				.Destructure.ToMaximumDepth( 100 )
+				.MinimumLevel.Verbose()
+				.WriteTo.Console().CreateLogger();
+			NetcoLogger.LoggerFactory = new SerilogLoggerFactory( Log.Logger );
 
 			var cc = new CsvContext();
 			var testConfig = cc.Read< TestConfig >( credentialsFilePath, new CsvFileDescription { FirstLineHasColumnNames = true } ).FirstOrDefault();
@@ -73,7 +79,7 @@ namespace ShipStationAccessTests.Orders
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
-			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
+			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
 				return;
@@ -87,7 +93,7 @@ namespace ShipStationAccessTests.Orders
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
-			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
+			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
 				return;

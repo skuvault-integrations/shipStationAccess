@@ -15,7 +15,7 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ActionPolicy _shipStationSumbitPolicy = ActionPolicy.Handle< Exception >().Retry( 10, ( ex, i ) =>
 		{
-			ShipStationLogger.Log.Trace( ex, "Retrying ShipStation API submit call for the {0} time", i );
+			ShipStationLogger.Log.Trace( ex, "Retrying ShipStation API submit call for the {retryCounter} time", i );
 			SystemUtil.Sleep( TimeSpan.FromSeconds( 0.5 + i ) );
 		} );
 
@@ -26,7 +26,7 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ActionPolicyAsync _shipStationSumbitAsyncPolicy = ActionPolicyAsync.Handle< Exception >().RetryAsync( 10, async ( ex, i ) =>
 		{
-			ShipStationLogger.Log.Trace( ex, "Retrying ShipStation API submit call for the {0} time", i );
+			ShipStationLogger.Log.Trace( ex, "Retrying ShipStation API submit call for the {retryCounter} time", i );
 			await Task.Delay( TimeSpan.FromSeconds( 0.5 + i ) );
 		} );
 
@@ -37,7 +37,7 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ActionPolicy _shipStationGetPolicy = ActionPolicy.Handle< Exception >().Retry( 10, ( ex, i ) =>
 		{
-			ShipStationLogger.Log.Trace( ex, "Retrying ShipStation API get call for the {0} time", i );
+			ShipStationLogger.Log.Trace( ex, "Retrying ShipStation API get call for the {retryCounter} time", i );
 			SystemUtil.Sleep( TimeSpan.FromSeconds( 0.5 + i ) );
 		} );
 
@@ -48,7 +48,7 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ActionPolicyAsync _shipStationGetAsyncPolicy = ActionPolicyAsync.Handle< Exception >().RetryAsync( 10, async ( ex, i ) =>
 		{
-			ShipStationLogger.Log.Trace( ex, "Retrying ShipStation API get call for the {0} time", i );
+			ShipStationLogger.Log.Trace( ex, "Retrying ShipStation API get call for the {retryCounter} time", i );
 			await Task.Delay( TimeSpan.FromSeconds( 0.5 + i ) );
 		} );
 	}

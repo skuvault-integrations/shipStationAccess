@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Netco.Extensions;
 using ShipStationAccess.V2.Misc;
@@ -131,7 +132,22 @@ namespace ShipStationAccess.V2
 			if( !order.IsValid() )
 				return;
 
-			ActionPolicies.Submit.Do( () => this._webRequestServices.PostData( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() ) );
+			ActionPolicies.Submit.Do( () =>
+			{
+				try
+				{
+					this._webRequestServices.PostData( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() );
+				}
+				catch( WebException x )
+				{
+					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
+					{
+						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
+					}
+					else
+						throw;
+				}
+			} );
 		}
 
 		public async Task UpdateOrderAsync( ShipStationOrder order )
@@ -141,7 +157,19 @@ namespace ShipStationAccess.V2
 
 			await ActionPolicies.SubmitAsync.Do( async () =>
 			{
-				await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() );
+				try
+				{
+					await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() );
+				}
+				catch( WebException x )
+				{
+					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
+					{
+						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
+					}
+					else
+						throw;
+				}
 			} );
 		}
 		#endregion
