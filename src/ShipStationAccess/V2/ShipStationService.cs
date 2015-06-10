@@ -29,8 +29,8 @@ namespace ShipStationAccess.V2
 			var pagesCount = 1;
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
-			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom.UtcToPst(), dateTo.UtcToPst() );
-			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom.UtcToPst(), dateTo.UtcToPst() );
+			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
+			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
 			var hasOrders = true;
 
 			Action< ShipStationOrders > processOrders = sorders =>
@@ -77,8 +77,8 @@ namespace ShipStationAccess.V2
 			var pagesCount = 1;
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
-			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom.UtcToPst(), dateTo.UtcToPst() );
-			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom.UtcToPst(), dateTo.UtcToPst() );
+			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
+			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
 			var hasOrders = true;
 
 			Func< ShipStationOrders, Task > processOrders = async sorders =>

@@ -10,7 +10,7 @@ namespace ShipStationAccess.V2.Services
 
 		public static string CreateNewOrdersParams( DateTime startDate, DateTime endDate )
 		{
-			var endpoint = string.Format( "?{0}={1}&{2}={3}",
+			var endpoint = string.Format( "?{0}={1}-00:00&{2}={3}-00:00",
 				ShipStationParam.OrdersCreatedDateFrom.Name, startDate.ToString( "s" ),
 				ShipStationParam.OrdersCreatedDateTo.Name, endDate.ToString( "s" ));
 			return endpoint;
@@ -18,7 +18,7 @@ namespace ShipStationAccess.V2.Services
 
 		public static string CreateModifiedOrdersParams( DateTime startDate, DateTime endDate )
 		{
-			var endpoint = string.Format( "?{0}={1}&{2}={3}",
+			var endpoint = string.Format( "?{0}={1}-00:00&{2}={3}-00:00",
 				ShipStationParam.OrdersModifiedDateFrom.Name, startDate.ToString( "s" ),
 				ShipStationParam.OrdersModifiedDateTo.Name, endDate.ToString( "s" ));
 			return endpoint;
