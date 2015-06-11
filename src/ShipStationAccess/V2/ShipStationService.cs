@@ -26,13 +26,8 @@ namespace ShipStationAccess.V2
 		#region Get Orders
 		public IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, ShipStationOrder > processOrder = null )
 		{
-			var pagesCount = 1;
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
-			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
-			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
-			var hasOrders = true;
-
 			Action< ShipStationOrders > processOrders = sorders =>
 			{
 				foreach( var order in sorders.Orders )
@@ -48,24 +43,42 @@ namespace ShipStationAccess.V2
 				}
 			};
 
-			do
+			Action< string > downloadOrders = endPoint =>
 			{
-				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( pagesCount, RequestMaxLimit ) );
-				var compositeNewOrdersEndpoint = newOrdersEndpoint.ConcatParams( nextPageParams );
-				var compositeModifiedOrdersEndpoint = modifiedOrdersEndpoint.ConcatParams( nextPageParams );
-				pagesCount++;
+				var pagesCount = int.MaxValue;
+				var currentPage = 1;
+				var ordersCount = 0;
+				var ordersExpected = -1;
 
-				ActionPolicies.Get.Do( () =>
+				do
 				{
-					var newOrdersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, compositeNewOrdersEndpoint );
-					processOrders( newOrdersWithinPage );
+					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+					var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
 
-					var modifiedOrdersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, compositeModifiedOrdersEndpoint );
-					processOrders( modifiedOrdersWithinPage );
+					ActionPolicies.Get.Do( () =>
+					{
+						var ordersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
+						if( pagesCount == int.MaxValue )
+						{
+							pagesCount = ordersWithinPage.TotalPages;
+							ordersExpected = ordersWithinPage.TotalOrders;
+						}
+						currentPage++;
+						ordersCount += ordersWithinPage.Orders.Count;
 
-					hasOrders = newOrdersWithinPage.Orders.Any() || modifiedOrdersWithinPage.Orders.Any();
-				} );
-			} while( hasOrders );
+						processOrders( ordersWithinPage );
+					} );
+				} while( currentPage <= pagesCount );
+
+				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}",
+					_webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+			};
+
+			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
+			downloadOrders( newOrdersEndpoint );
+
+			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
+			downloadOrders( modifiedOrdersEndpoint );
 
 			this.FindMarketplaceIds( orders );
 
@@ -74,12 +87,8 @@ namespace ShipStationAccess.V2
 
 		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null )
 		{
-			var pagesCount = 1;
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
-			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
-			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
-			var hasOrders = true;
 
 			Func< ShipStationOrders, Task > processOrders = async sorders =>
 			{
@@ -102,23 +111,42 @@ namespace ShipStationAccess.V2
 				}
 			};
 
-			do
+			Func< string, Task > downloadOrders = async endPoint =>
 			{
-				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( pagesCount, RequestMaxLimit ) );
-				var compositeNewOrdersEndpoint = newOrdersEndpoint.ConcatParams( nextPageParams );
-				var compositeModifiedOrdersEndpoint = modifiedOrdersEndpoint.ConcatParams( nextPageParams );
-				pagesCount++;
+				var pagesCount = int.MaxValue;
+				var currentPage = 1;
+				var ordersCount = 0;
+				var ordersExpected = -1;
 
-				await ActionPolicies.GetAsync.Do( async () =>
+				do
 				{
-					var newOrdersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, compositeNewOrdersEndpoint );
-					await processOrders( newOrdersWithinPage );
-					var modifiedOrdersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, compositeModifiedOrdersEndpoint );
-					await processOrders( modifiedOrdersWithinPage );
+					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+					var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
 
-					hasOrders = newOrdersWithinPage.Orders.Any() || modifiedOrdersWithinPage.Orders.Any();
-				} );
-			} while( hasOrders );
+					await ActionPolicies.GetAsync.Do( async () =>
+					{
+						var ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
+						if( pagesCount == int.MaxValue )
+						{
+							pagesCount = ordersWithinPage.TotalPages;
+							ordersExpected = ordersWithinPage.TotalOrders;
+						}
+						currentPage++;
+						ordersCount += ordersWithinPage.Orders.Count;
+
+						processOrders( ordersWithinPage );
+					} );
+				} while( currentPage <= pagesCount );
+
+				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}",
+					_webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+			};
+
+			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
+			await downloadOrders( newOrdersEndpoint );
+
+			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
+			await downloadOrders( modifiedOrdersEndpoint );
 
 			await this.FindMarketplaceIdsAsync( orders );
 
@@ -141,9 +169,7 @@ namespace ShipStationAccess.V2
 				catch( WebException x )
 				{
 					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-					{
 						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
-					}
 					else
 						throw;
 				}
@@ -164,9 +190,7 @@ namespace ShipStationAccess.V2
 				catch( WebException x )
 				{
 					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-					{
 						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
-					}
 					else
 						throw;
 				}

@@ -12,6 +12,7 @@ using Serilog;
 using ShipStationAccess;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccessTests.Orders
 {
@@ -38,10 +39,20 @@ namespace ShipStationAccessTests.Orders
 		}
 
 		[ Test ]
+		public void DeserializationTest()
+		{
+			var json = "{\"orders\":[],\"total\":2,\"page\":1,\"pages\":3}";
+			var orders = json.DeserializeJson< ShipStationOrders >();
+			orders.TotalPages.Should().Be( 3 );
+			orders.CurrentPageNumber.Should().Be( 1 );
+			orders.TotalOrders.Should().Be( 2 );
+		}
+
+		[ Test ]
 		public void GetOrders()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}

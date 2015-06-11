@@ -12,6 +12,10 @@ namespace ShipStationAccess.V2.Services
 	internal sealed class WebRequestServices
 	{
 		private readonly ShipStationCredentials _credentials;
+		public string GetApiKey()
+		{
+			return _credentials.ApiKey;
+		}
 
 		public WebRequestServices( ShipStationCredentials credentials )
 		{
@@ -39,8 +43,14 @@ namespace ShipStationAccess.V2.Services
 				{
 					var response = x.Response;
 					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
-					if( statusCode == 429 )
-						resetDelay = GetLimitReset( response );
+					switch( statusCode )
+					{
+						case 429:
+							resetDelay = GetLimitReset( response );
+							break;
+						default:
+							throw;
+					}
 				}
 
 				this.CreateDelay( resetDelay ).Wait();
@@ -68,8 +78,14 @@ namespace ShipStationAccess.V2.Services
 				{
 					var response = x.Response;
 					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
-					if( statusCode == 429 )
-						resetDelay = GetLimitReset( response );
+					switch( statusCode )
+					{
+						case 429:
+							resetDelay = GetLimitReset( response );
+							break;
+						default:
+							throw;
+					}
 				}
 
 				await this.CreateDelay( resetDelay );

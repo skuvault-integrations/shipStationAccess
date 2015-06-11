@@ -15,6 +15,10 @@ namespace ShipStationAccess.V2.Services
 			JsConfig.AlwaysUseUtc = true;
 			JsConfig.AssumeUtc = true;
 			JsConfig.ConvertObjectTypesIntoStringDictionary = true;
+			JsConfig.TryToParsePrimitiveTypeValues = true;
+			JsConfig.TryToParseNumericType = true;
+			JsConfig.ParsePrimitiveFloatingPointTypes = ParseAsType.Single;
+			JsConfig.ParsePrimitiveIntegerTypes = ParseAsType.Int32 | ParseAsType.Int64;
 			JsConfig.IncludeNullValues = true;
 			JsConfig< DateTime >.SerializeFn = SerializeDateTime;
 			JsConfig< DateTime? >.SerializeFn = SerializeDateTime;
@@ -46,31 +50,28 @@ namespace ShipStationAccess.V2.Services
 			if( utcTime.Kind == DateTimeKind.Unspecified || utcTime.Kind == DateTimeKind.Local )
 				utcTime = DateTime.SpecifyKind( utcTime, DateTimeKind.Utc );
 
-			if( utcTime == DateTime.MinValue || utcTime == DateTime.MaxValue || utcTime == default( DateTime ) )
+			if( utcTime == DateTime.MinValue || utcTime == DateTime.MaxValue || utcTime == default(DateTime) )
 				return utcTime.ToString( CultureInfo.InvariantCulture );
 
 			return TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone ).ToString( "s", CultureInfo.InvariantCulture );
 		}
 
-		
-		private static DateTime DeserializeDateTime( string pstStringTime ) 
+		private static DateTime DeserializeDateTime( string pstStringTime )
 		{
 			if( string.IsNullOrWhiteSpace( pstStringTime ) )
-				return default( DateTime );
+				return default(DateTime);
 
 			DateTime pstTime;
-			if( !DateTime.TryParse( pstStringTime , out pstTime ) )
+			if( !DateTime.TryParse( pstStringTime, out pstTime ) )
 				return pstTime;
 
- 			if( pstTime == DateTime.MinValue || pstTime == DateTime.MaxValue || pstTime == default( DateTime ) )
+			if( pstTime == DateTime.MinValue || pstTime == DateTime.MaxValue || pstTime == default(DateTime) )
 				return pstTime;
 
 			var pacificTimeZone = _pacificTimeZone;
 
 			if( pacificTimeZone.IsInvalidTime( pstTime ) || pacificTimeZone.IsAmbiguousTime( pstTime ) )
-			{
 				pstTime = pstTime.AddHours( 1 );
-			}
 
 			if( pstTime.Kind != DateTimeKind.Unspecified )
 				pstTime = DateTime.SpecifyKind( pstTime, DateTimeKind.Unspecified );

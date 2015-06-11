@@ -6,7 +6,6 @@ namespace ShipStationAccess.V2.Models
 	{
 		public string ApiKey{ get; private set; }
 		public string ApiSecret{ get; private set; }
-		public string MashapeKey{ get; private set; }
 		public string Host{ get; private set; }
 
 		public ShipStationCredentials( string apiKey, string apiSecret )
@@ -16,7 +15,6 @@ namespace ShipStationAccess.V2.Models
 
 			this.ApiKey = apiKey;
 			this.ApiSecret = apiSecret;
-			this.MashapeKey = "mtoHg8NaKLmshIo69qYeENy89Rtdp1yhs7RjsnuVTdqEW0hlIP";
 			this.Host = "https://ssapi.shipstation.com";
 		}
 	}
