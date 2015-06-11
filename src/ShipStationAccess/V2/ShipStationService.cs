@@ -134,7 +134,7 @@ namespace ShipStationAccess.V2
 						currentPage++;
 						ordersCount += ordersWithinPage.Orders.Count;
 
-						processOrders( ordersWithinPage );
+						await processOrders( ordersWithinPage );
 					} );
 				} while( currentPage <= pagesCount );
 
