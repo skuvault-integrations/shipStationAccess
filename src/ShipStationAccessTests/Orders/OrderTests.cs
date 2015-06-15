@@ -58,6 +58,19 @@ namespace ShipStationAccessTests.Orders
 		}
 
 		[ Test ]
+		public void SerializationOrderTest()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
+			var testOrder = orders.First();
+
+			var serializedOrder = testOrder.SerializeToJson();
+			var deserializedOrder = serializedOrder.DeserializeJson< ShipStationOrder >();
+			var serializedOrder2 = deserializedOrder.SerializeToJson();
+			Assert.AreEqual( serializedOrder, serializedOrder2 );
+		}
+
+		[ Test ]
 		public async Task GetOrdersAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
@@ -90,10 +103,12 @@ namespace ShipStationAccessTests.Orders
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
-			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
+			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
-				return;
+			{
+				Assert.Fail( "No order found to update" );
+			}
 
 			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(30)";
 			service.UpdateOrder( orderToChange );
@@ -104,7 +119,7 @@ namespace ShipStationAccessTests.Orders
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
-			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
+			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
 				return;

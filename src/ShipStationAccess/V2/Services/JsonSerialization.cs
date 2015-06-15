@@ -23,6 +23,7 @@ namespace ShipStationAccess.V2.Services
 			JsConfig< DateTime >.SerializeFn = SerializeDateTime;
 			JsConfig< DateTime? >.SerializeFn = SerializeDateTime;
 			JsConfig< DateTime >.DeSerializeFn = DeserializeDateTime;
+			JsConfig< DateTime? >.DeSerializeFn = DeserializeDateTimeNullable;
 		}
 
 		public static string SerializeToJson( this object @object )
@@ -53,7 +54,14 @@ namespace ShipStationAccess.V2.Services
 			if( utcTime == DateTime.MinValue || utcTime == DateTime.MaxValue || utcTime == default(DateTime) )
 				return utcTime.ToString( CultureInfo.InvariantCulture );
 
-			return TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone ).ToString( "s", CultureInfo.InvariantCulture );
+			var pstTime = TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone ).ToString( "yyyy-MM-ddTHH:mm:ss.fffffff", CultureInfo.InvariantCulture );
+			return pstTime;
+		}
+
+		private static DateTime? DeserializeDateTimeNullable( string pstStringTime )
+		{
+			var dateTime = DeserializeDateTime( pstStringTime );
+			return dateTime == default(DateTime) ? ( DateTime? )null : dateTime;
 		}
 
 		private static DateTime DeserializeDateTime( string pstStringTime )
