@@ -31,5 +31,17 @@ namespace ShipStationAccess.V2.Models.Order
 
 		[ DataMember( Name = "source" ) ]
 		public string Source{ get; set; }
+
+		[ DataMember( Name = "billToParty" ) ]
+		public string BillToParty{ get; set; }
+
+		[ DataMember( Name = "billToAccount" ) ]
+		public string BillToAccount{ get; set; }
+
+		[ DataMember( Name = "billToPostalCode" ) ]
+		public string BillToPostalCode{ get; set; }
+
+		[ DataMember( Name = "billToCountryCode" ) ]
+		public string BillToCountryCode{ get; set; }
 	}
 }

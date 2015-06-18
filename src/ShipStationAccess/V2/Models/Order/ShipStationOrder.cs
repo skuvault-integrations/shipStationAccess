@@ -45,13 +45,19 @@ namespace ShipStationAccess.V2.Models.Order
 		public string InternalNotes{ get; set; }
 
 		[ DataMember( Name = "gift" ) ]
-		public bool gift{ get; set; }
+		public bool Gift{ get; set; }
+		
+		[ DataMember( Name = "giftMessage" ) ]
+		public string GiftMessage{ get; set; }
 
 		[ DataMember( Name = "internalMessage" ) ]
 		public string InternalMessage{ get; set; }
 
 		[ DataMember( Name = "paymentMethod" ) ]
 		public string PaymentMethod{ get; set; }
+
+		[ DataMember( Name = "requestedShippingService" ) ]
+		public string RequestedShippingService{ get; set; }
 
 		[ DataMember( Name = "carrierCode" ) ]
 		public string CarrierCode{ get; set; }
@@ -64,9 +70,6 @@ namespace ShipStationAccess.V2.Models.Order
 
 		[ DataMember( Name = "confirmation" ) ]
 		public string Confirmation{ get; set; }
-
-		[ DataMember( Name = "weight" ) ]
-		public ShipStationItemWeight Weight{ get; set; }
 
 		[ DataMember( Name = "shipTo" ) ]
 		public ShipStationAddress ShippingAddress{ get; set; }
@@ -82,6 +85,9 @@ namespace ShipStationAccess.V2.Models.Order
 
 		[ DataMember( Name = "shippingAmount" ) ]
 		public decimal ShippingAmount{ get; set; }
+
+		[ DataMember( Name = "weight" ) ]
+		public ShipStationItemWeight Weight{ set; get; }
 
 		[ DataMember( Name = "dimensions" ) ]
 		public ShipStationOrderDimensions Dimensions{ get; set; }

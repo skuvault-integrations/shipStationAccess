@@ -10,5 +10,8 @@ namespace ShipStationAccess.V2.Models.Order
 
 		[ DataMember( Name = "customsItems" ) ]
 		public ShipStationCustomItems CustomsItems{ get; set; }
+
+		[ DataMember( Name = "nonDelivery" ) ]
+		public string NonDelivery{ get; set; }
 	}
 }
