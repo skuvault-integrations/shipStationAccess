@@ -8,33 +8,38 @@ namespace ShipStationAccess.V2.Services
 	{
 		private static readonly TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById( "Pacific Standard Time" );
 
-		static JsonSerialization()
+		private static JsConfigScope BeginJsConfigScope()
 		{
-			JsConfig.ExcludeTypeInfo = true;
-			JsConfig.DateHandler = DateHandler.ISO8601;
-			JsConfig.AlwaysUseUtc = true;
-			JsConfig.AssumeUtc = true;
-			JsConfig.ConvertObjectTypesIntoStringDictionary = true;
-			JsConfig.TryToParsePrimitiveTypeValues = true;
-			JsConfig.TryToParseNumericType = true;
-			JsConfig.ParsePrimitiveFloatingPointTypes = ParseAsType.Single;
-			JsConfig.ParsePrimitiveIntegerTypes = ParseAsType.Int32 | ParseAsType.Int64;
-			JsConfig.IncludeNullValues = true;
+			var config = JsConfig.BeginScope();
+			config.ExcludeTypeInfo = true;
+			config.DateHandler = DateHandler.ISO8601;
+			config.AlwaysUseUtc = true;
+			config.AssumeUtc = true;
+			config.ConvertObjectTypesIntoStringDictionary = true;
+			config.TryToParseNumericType = true;
+			config.ParsePrimitiveFloatingPointTypes = ParseAsType.Single;
+			config.ParsePrimitiveIntegerTypes = ParseAsType.Int32 | ParseAsType.Int64;
+			config.IncludeNullValues = true;
 			JsConfig< DateTime >.SerializeFn = SerializeDateTime;
 			JsConfig< DateTime? >.SerializeFn = SerializeDateTime;
 			JsConfig< DateTime >.DeSerializeFn = DeserializeDateTime;
 			JsConfig< DateTime? >.DeSerializeFn = DeserializeDateTimeNullable;
+			return config;
 		}
 
 		public static string SerializeToJson( this object @object )
 		{
-			var serializeToString = JsonSerializer.SerializeToString( @object );
-			return serializeToString;
+			using( var config = BeginJsConfigScope() )
+			{
+				var serializeToString = JsonSerializer.SerializeToString( @object );
+				return serializeToString;
+			}
 		}
 
 		public static T DeserializeJson< T >( this string jsonContent )
 		{
-			return JsonSerializer.DeserializeFromString< T >( jsonContent );
+			using( var config = BeginJsConfigScope() )
+				return JsonSerializer.DeserializeFromString< T >( jsonContent );
 		}
 
 		#region Custom serialization

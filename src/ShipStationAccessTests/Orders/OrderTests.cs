@@ -52,7 +52,8 @@ namespace ShipStationAccessTests.Orders
 		public void GetOrders()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
+			var startDate = new DateTime( 2015, 06, 16, 5, 00, 00 ); 
+			var orders = service.GetOrders( startDate, DateTime.UtcNow );//DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
@@ -61,7 +62,7 @@ namespace ShipStationAccessTests.Orders
 		public void SerializationOrderTest()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow );
 			var testOrder = orders.First();
 
 			var serializedOrder = testOrder.SerializeToJson();
@@ -74,7 +75,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrdersAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
@@ -108,6 +109,7 @@ namespace ShipStationAccessTests.Orders
 			if( orderToChange == null )
 			{
 				Assert.Fail( "No order found to update" );
+				return;
 			}
 
 			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(30)";
@@ -161,7 +163,7 @@ namespace ShipStationAccessTests.Orders
 				await service.UpdateOrderAsync( o );
 				return o;
 			};
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -2 ), DateTime.UtcNow, updateOrderLocation );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, updateOrderLocation );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
