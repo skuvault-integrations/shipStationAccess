@@ -16,6 +16,9 @@ namespace ShipStationAccess.V2.Models.Order
 
 		[ DataMember( Name = "orderKey" ) ]
 		public string OrderKey{ get; set; }
+		
+		[ DataMember( Name = "createDate" ) ]
+		public DateTime CreateDate{ get; set; }
 
 		[ DataMember( Name = "orderDate" ) ]
 		public DateTime OrderDate{ get; set; }
