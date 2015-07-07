@@ -9,12 +9,12 @@ namespace ShipStationAccess.V2.Models.Order
 		public string units{ get; set; }
 
 		[ DataMember( Name = "length" ) ]
-		public int Length{ get; set; }
+		public decimal Length{ get; set; }
 
 		[ DataMember( Name = "width" ) ]
-		public int Width{ get; set; }
+		public decimal Width{ get; set; }
 
 		[ DataMember( Name = "height" ) ]
-		public int Height{ get; set; }
+		public decimal Height{ get; set; }
 	}
 }

@@ -52,8 +52,7 @@ namespace ShipStationAccessTests.Orders
 		public void GetOrders()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var startDate = new DateTime( 2015, 06, 16, 5, 00, 00 ); 
-			var orders = service.GetOrders( startDate, DateTime.UtcNow );//DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
