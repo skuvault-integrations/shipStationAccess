@@ -183,9 +183,22 @@ namespace ShipStationAccess.V2
 
 			await ActionPolicies.SubmitAsync.Do( async () =>
 			{
+				var orderUpdateBody = new BriefShipStationOrderInfo
+				{
+					Items = order.Items,
+					OrderId = order.OrderId,
+					BillingAddress = order.BillingAddress,
+					OrderDate = order.OrderDate,
+					OrderNumber = order.OrderNumber,
+					ShippingAddress = order.ShippingAddress,
+					OrderStatus = order.OrderStatus,
+					CreateDate = order.CreateDate,
+					OrderKey = order.OrderKey,
+					Weight = order.Weight
+				};
 				try
 				{
-					await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() );
+					await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, orderUpdateBody.SerializeToJson() );
 				}
 				catch( WebException x )
 				{
@@ -196,6 +209,7 @@ namespace ShipStationAccess.V2
 				}
 			} );
 		}
+
 		#endregion
 
 		#region Get Stores

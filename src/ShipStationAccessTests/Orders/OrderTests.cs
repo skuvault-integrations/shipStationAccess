@@ -119,13 +119,13 @@ namespace ShipStationAccessTests.Orders
 		public async Task UpdateOrderAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
-			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow );
+			var orderToChange = orders.Select( o => o ).OrderBy(o => o.CreateDate).Reverse().FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
 				return;
 
-			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(30)";
+			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(35)";
 			await service.UpdateOrderAsync( orderToChange );
 		}
 
