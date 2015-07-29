@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Models.Store;
 

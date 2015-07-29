@@ -125,7 +125,7 @@ namespace ShipStationAccessTests.Orders
 			if( orderToChange == null )
 				return;
 
-			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(35)";
+			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(25)";
 			await service.UpdateOrderAsync( orderToChange );
 		}
 
