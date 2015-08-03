@@ -194,7 +194,6 @@ namespace ShipStationAccess.V2
 					OrderStatus = order.OrderStatus,
 					CreateDate = order.CreateDate,
 					OrderKey = order.OrderKey,
-					AdvancedOptions = order.AdvancedOptions,
 					Weight = order.Weight
 				};
 				try
