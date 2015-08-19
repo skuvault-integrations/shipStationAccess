@@ -87,12 +87,13 @@ task NuGet Package, Version, {
 		<tags>$project_short_name</tags>
 		<dependencies> 
 			<group targetFramework="net45">
-				<dependency id="Netco" version="1.4.3" />
-				<dependency id="CuttingEdge.Conditions" version="1.2.0.0" />
-				<dependency id="Microsoft.Data.Edm" version="5.6.3" />
-				<dependency id="Microsoft.Data.OData" version="5.6.3" />
-				<dependency id="Microsoft.Data.Services.Client" version="5.6.3" />
-				<dependency id="System.Spatial" version="5.6.3" />
+                <dependency id="CuttingEdge.Conditions" version="1.2.0.0" />				
+                <dependency id="Microsoft.Data.Edm" version="5.6.4" />
+				<dependency id="Microsoft.Data.OData" version="5.6.4" />
+				<dependency id="Microsoft.Data.Services.Client" version="5.6.4" />
+                <dependency id="Netco" version="1.5.1" />
+				<dependency id="ServiceStack.Text" version="4.0.42" />
+				<dependency id="System.Spatial" version="5.6.4" />
 			</group>
 		</dependencies>
 	</metadata>
