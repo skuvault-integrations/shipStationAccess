@@ -9,6 +9,7 @@ using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Models.Store;
+using ShipStationAccess.V2.Models.TagList;
 using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccess.V2
@@ -21,6 +22,28 @@ namespace ShipStationAccess.V2
 		public ShipStationService( ShipStationCredentials credentials )
 		{
 			this._webRequestServices = new WebRequestServices( credentials );
+		}
+
+		public IEnumerable< ShipStationTag > GetTags()
+		{
+			var tags = new List< ShipStationTag >();
+			ActionPolicies.Get.Do( () =>
+			{
+				tags = this._webRequestServices.GetResponse< List< ShipStationTag > >( ShipStationCommand.GetTags, string.Empty );
+			} );
+
+			return tags;
+		}
+
+		public async Task < IEnumerable< ShipStationTag > > GetTagsAsync()
+		{
+			var tags = new List< ShipStationTag >();
+			await ActionPolicies.GetAsync.Do( async () =>
+			{
+				tags = await this._webRequestServices.GetResponseAsync< List< ShipStationTag > >( ShipStationCommand.GetTags, string.Empty );
+			} );
+
+			return tags;
 		}
 
 		#region Get Orders

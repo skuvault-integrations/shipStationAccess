@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Models.Store;
+using ShipStationAccess.V2.Models.TagList;
 
 namespace ShipStationAccess.V2
 {
@@ -16,5 +17,8 @@ namespace ShipStationAccess.V2
 
 		IEnumerable< ShipStationStore > GetStores();
 		Task< IEnumerable< ShipStationStore > > GetStoresAsync();
+
+		IEnumerable< ShipStationTag > GetTags();
+		Task < IEnumerable< ShipStationTag > > GetTagsAsync();
 	}
 }

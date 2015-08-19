@@ -58,8 +58,9 @@
       <HintPath>..\packages\Netco.1.5.1\lib\net45\Netco.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="ServiceStack.Text">
-      <HintPath>..\packages\ServiceStack.Text.4.0.35\lib\net40\ServiceStack.Text.dll</HintPath>
+    <Reference Include="ServiceStack.Text, Version=4.0.42.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\skuvault\src\packages\ServiceStack.Text.4.0.42\lib\net40\ServiceStack.Text.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -102,6 +103,7 @@
     <Compile Include="V2\Models\OrderItem\ShipStationOrderItem.cs" />
     <Compile Include="V2\Models\Store\ShipStationStore.cs" />
     <Compile Include="V2\Models\Store\ShipStationStores.cs" />
+    <Compile Include="V2\Models\TagList\ShipStationTag.cs" />
     <Compile Include="V2\Services\DateTimeExtensions.cs" />
     <Compile Include="V2\Services\JsonSerialization.cs" />
     <Compile Include="V2\Services\ParamsBuilder.cs" />

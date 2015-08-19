@@ -104,6 +104,9 @@ namespace ShipStationAccess.V2.Models.Order
 		[ DataMember( Name = "advancedOptions" ) ]
 		public ShipStationOrderAdvancedOptions AdvancedOptions{ get; set; }
 
+		[ DataMember( Name = "tagIds" ) ]
+		public IList< long > TagsIds { get; set; }
+
 		public int MarketplaceId{ get; set; }
 
 		#region Equality members

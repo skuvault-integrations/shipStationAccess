@@ -79,6 +79,24 @@ namespace ShipStationAccessTests.Orders
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
 
+		[Test]
+		public async Task GetTagsAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var tags = await service.GetTagsAsync();
+
+			tags.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[Test]
+		public void GetTags()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var tags = service.GetTags();
+
+			tags.Count().Should().BeGreaterThan( 0 );
+		}
+
 		public async Task TrottlingTest()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
