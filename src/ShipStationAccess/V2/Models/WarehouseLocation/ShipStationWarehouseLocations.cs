@@ -7,6 +7,7 @@ namespace ShipStationAccess.V2.Models.WarehouseLocation
 {
 	public sealed class ShipStationWarehouseLocations
 	{
+		private readonly object _lockObject = new object();
 		public Dictionary< string, HashSet< long > > WarehouseLocations{ get; private set; }
 
 		public ShipStationWarehouseLocations()
@@ -21,28 +22,34 @@ namespace ShipStationAccess.V2.Models.WarehouseLocation
 
 		public void AddItem( string warehouseLocation, long orderItemId )
 		{
-			HashSet< long > orderItemIds;
-			if( !this.WarehouseLocations.TryGetValue( warehouseLocation, out orderItemIds ) )
+			lock( this._lockObject )
 			{
-				this.WarehouseLocations[ warehouseLocation ] = new HashSet< long > { orderItemId };
-				return;
-			}
+				HashSet< long > orderItemIds;
+				if( !this.WarehouseLocations.TryGetValue( warehouseLocation, out orderItemIds ) )
+				{
+					this.WarehouseLocations[ warehouseLocation ] = new HashSet< long > { orderItemId };
+					return;
+				}
 
-			orderItemIds.Add( orderItemId );
+				orderItemIds.Add( orderItemId );
+			}
 		}
 
 		public void AddItems( string warehouseLocation, IEnumerable< long > orderItemIds )
 		{
-			HashSet< long > oldOrderItemIds;
-			if( !this.WarehouseLocations.TryGetValue( warehouseLocation, out oldOrderItemIds ) )
+			lock( this._lockObject )
 			{
-				this.WarehouseLocations[ warehouseLocation ] = orderItemIds.ToHashSet();
-				return;
-			}
+				HashSet< long > oldOrderItemIds;
+				if( !this.WarehouseLocations.TryGetValue( warehouseLocation, out oldOrderItemIds ) )
+				{
+					this.WarehouseLocations[ warehouseLocation ] = orderItemIds.ToHashSet();
+					return;
+				}
 
-			foreach( var orderItemId in orderItemIds )
-			{
-				oldOrderItemIds.Add( orderItemId );
+				foreach( var orderItemId in orderItemIds )
+				{
+					oldOrderItemIds.Add( orderItemId );
+				}
 			}
 		}
 
