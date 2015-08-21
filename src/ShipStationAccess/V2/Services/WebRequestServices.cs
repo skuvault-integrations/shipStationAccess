@@ -156,6 +156,8 @@ namespace ShipStationAccess.V2.Services
 		private void CreateRequestHeaders( WebRequest request )
 		{
 			request.Headers.Add( "Authorization", this.CreateAuthenticationHeader() );
+			if( !string.IsNullOrEmpty( this._credentials.PartnerKey ) )
+				request.Headers.Add( "x-partner", this._credentials.PartnerKey );
 		}
 
 		private string CreateAuthenticationHeader()

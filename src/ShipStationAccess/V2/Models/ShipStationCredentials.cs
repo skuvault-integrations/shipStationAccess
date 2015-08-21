@@ -7,6 +7,7 @@ namespace ShipStationAccess.V2.Models
 		public string ApiKey{ get; private set; }
 		public string ApiSecret{ get; private set; }
 		public string Host{ get; private set; }
+		public string PartnerKey{ get; internal set; }
 
 		public ShipStationCredentials( string apiKey, string apiSecret )
 		{

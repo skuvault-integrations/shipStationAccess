@@ -15,7 +15,7 @@ namespace ShipStationAccessTests
 {
 	public class TrottlingTests
 	{
-		private readonly IShipStationFactory ShipStationFactory = new ShipStationFactory();
+		private IShipStationFactory ShipStationFactory;
 		private ShipStationCredentials _credentials;
 
 		[ SetUp ]
@@ -32,7 +32,10 @@ namespace ShipStationAccessTests
 			var testConfig = cc.Read< TestConfig >( credentialsFilePath, new CsvFileDescription { FirstLineHasColumnNames = true } ).FirstOrDefault();
 
 			if( testConfig != null )
+			{
+				this.ShipStationFactory = new ShipStationFactory( testConfig.PartnerKey );
 				this._credentials = new ShipStationCredentials( testConfig.ApiKey, testConfig.ApiSecret );
+			}
 		}
 
 		[ Test ]
