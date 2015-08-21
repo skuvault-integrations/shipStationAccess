@@ -227,11 +227,7 @@ namespace ShipStationAccess.V2
 		{
 			foreach( var warehouseLocation in warehouseLocations.GetWarehouseLocationsToSend() )
 			{
-				var json = warehouseLocation.SerializeToJson();
-				ActionPolicies.Submit.Do( () =>
-				{
-					this._webRequestServices.PostData( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json );
-				} );
+				this.UpdateOrderItemsWarehouseLocation( warehouseLocation );
 			}
 		}
 
@@ -239,12 +235,26 @@ namespace ShipStationAccess.V2
 		{
 			foreach( var warehouseLocation in warehouseLocations.GetWarehouseLocationsToSend() )
 			{
-				var json = warehouseLocation.SerializeToJson();
-				await ActionPolicies.SubmitAsync.Do( async () =>
-				{
-					await this._webRequestServices.PostDataAsync( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json );
-				} );
+				await this.UpdateOrderItemsWarehouseLocationAsync( warehouseLocation );
 			}
+		}
+
+		public void UpdateOrderItemsWarehouseLocation( ShipStationWarehouseLocation warehouseLocation )
+		{
+			var json = warehouseLocation.SerializeToJson();
+			ActionPolicies.Submit.Do( () =>
+			{
+				this._webRequestServices.PostData( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json );
+			} );
+		}
+
+		public async Task UpdateOrderItemsWarehouseLocationAsync( ShipStationWarehouseLocation warehouseLocation )
+		{
+			var json = warehouseLocation.SerializeToJson();
+			await ActionPolicies.SubmitAsync.Do( async () =>
+			{
+				await this._webRequestServices.PostDataAsync( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json );
+			} );
 		}
 		#endregion
 

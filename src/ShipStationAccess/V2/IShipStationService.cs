@@ -16,6 +16,9 @@ namespace ShipStationAccess.V2
 		void UpdateOrder( ShipStationOrder order );
 		Task UpdateOrderAsync( ShipStationOrder order );
 
+		void UpdateOrderItemsWarehouseLocation( ShipStationWarehouseLocation warehouseLocation );
+		Task UpdateOrderItemsWarehouseLocationAsync( ShipStationWarehouseLocation warehouseLocation );
+
 		void UpdateOrderItemsWarehouseLocations( ShipStationWarehouseLocations warehouseLocations );
 		Task UpdateOrderItemsWarehouseLocationsAsync( ShipStationWarehouseLocations warehouseLocations );
 
