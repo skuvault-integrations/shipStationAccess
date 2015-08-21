@@ -82,6 +82,7 @@
     <Compile Include="Orders\SerializationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestConfig.cs" />
+    <Compile Include="TrottlingTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

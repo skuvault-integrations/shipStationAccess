@@ -1,6 +1,13 @@
-﻿using System;
+using System;
+using System.Linq;
 using FluentAssertions;
+using LINQtoCSV;
+using Netco.Logging;
+using Netco.Logging.SerilogIntegration;
 using NUnit.Framework;
+using Serilog;
+using ShipStationAccess;
+using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Services;
 
@@ -8,6 +15,26 @@ namespace ShipStationAccessTests.Orders
 {
 	public class SerializationTests
 	{
+		private readonly IShipStationFactory ShipStationFactory = new ShipStationFactory();
+		private ShipStationCredentials _credentials;
+
+		[ SetUp ]
+		public void Init()
+		{
+			const string credentialsFilePath = @"..\..\Files\ShipStationCredentials.csv";
+			Log.Logger = new LoggerConfiguration()
+				.Destructure.ToMaximumDepth( 100 )
+				.MinimumLevel.Verbose()
+				.WriteTo.Console().CreateLogger();
+			NetcoLogger.LoggerFactory = new SerilogLoggerFactory( Log.Logger );
+
+			var cc = new CsvContext();
+			var testConfig = cc.Read< TestConfig >( credentialsFilePath, new CsvFileDescription { FirstLineHasColumnNames = true } ).FirstOrDefault();
+
+			if( testConfig != null )
+				this._credentials = new ShipStationCredentials( testConfig.ApiKey, testConfig.ApiSecret );
+		}
+
 		[ Test ]
 		public void Date_Deserialization()
 		{
@@ -18,9 +45,9 @@ namespace ShipStationAccessTests.Orders
 			var serializedDate = pstDate.DeserializeJson< DateTime >();
 
 			//------------ Assert
-			serializedDate.Should().Be( new DateTime( 2015, 06, 06, 07, 29, 35, 00, DateTimeKind.Utc ) ); 
+			serializedDate.Should().Be( new DateTime( 2015, 06, 06, 07, 29, 35, 00, DateTimeKind.Utc ) );
 		}
-		
+
 		[ Test ]
 		public void Date_Serialization()
 		{
@@ -31,7 +58,7 @@ namespace ShipStationAccessTests.Orders
 			var serializedDate = pstDate.DeserializeJson< DateTime >();
 
 			//------------ Assert
-			serializedDate.SerializeToJson().Trim( '"' ).Should().Be( pstDate ); 
+			serializedDate.SerializeToJson().Trim( '"' ).Should().Be( pstDate );
 		}
 
 		[ Test ]
@@ -47,8 +74,31 @@ namespace ShipStationAccessTests.Orders
 			var serializedOrderString2 = order2.SerializeToJson();
 
 			//------------ Assert
-			order.PaymentDate.Should().Be( new DateTime( 2015, 06, 06, 07, 29, 35, 00, DateTimeKind.Utc ) ); 
+			order.PaymentDate.Should().Be( new DateTime( 2015, 06, 06, 07, 29, 35, 00, DateTimeKind.Utc ) );
 			Assert.AreEqual( serializedOrderString, serializedOrderString2 );
+		}
+
+		[ Test ]
+		public void SerializationOrderTest()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow );
+			var testOrder = orders.First();
+
+			var serializedOrder = testOrder.SerializeToJson();
+			var deserializedOrder = serializedOrder.DeserializeJson< ShipStationOrder >();
+			var serializedOrder2 = deserializedOrder.SerializeToJson();
+			Assert.AreEqual( serializedOrder, serializedOrder2 );
+		}
+
+		[ Test ]
+		public void DeserializationTest()
+		{
+			var json = "{\"orders\":[],\"total\":2,\"page\":1,\"pages\":3}";
+			var orders = json.DeserializeJson< ShipStationOrders >();
+			orders.TotalPages.Should().Be( 3 );
+			orders.CurrentPageNumber.Should().Be( 1 );
+			orders.TotalOrders.Should().Be( 2 );
 		}
 	}
 }

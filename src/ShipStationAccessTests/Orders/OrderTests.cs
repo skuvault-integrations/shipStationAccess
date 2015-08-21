@@ -13,7 +13,6 @@ using ShipStationAccess;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Models.WarehouseLocation;
-using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccessTests.Orders
 {
@@ -40,35 +39,12 @@ namespace ShipStationAccessTests.Orders
 		}
 
 		[ Test ]
-		public void DeserializationTest()
-		{
-			var json = "{\"orders\":[],\"total\":2,\"page\":1,\"pages\":3}";
-			var orders = json.DeserializeJson< ShipStationOrders >();
-			orders.TotalPages.Should().Be( 3 );
-			orders.CurrentPageNumber.Should().Be( 1 );
-			orders.TotalOrders.Should().Be( 2 );
-		}
-
-		[ Test ]
 		public void GetOrders()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
-		}
-
-		[ Test ]
-		public void SerializationOrderTest()
-		{
-			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow );
-			var testOrder = orders.First();
-
-			var serializedOrder = testOrder.SerializeToJson();
-			var deserializedOrder = serializedOrder.DeserializeJson< ShipStationOrder >();
-			var serializedOrder2 = deserializedOrder.SerializeToJson();
-			Assert.AreEqual( serializedOrder, serializedOrder2 );
 		}
 
 		[ Test ]
@@ -80,16 +56,7 @@ namespace ShipStationAccessTests.Orders
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
 
-		[Test]
-		public async Task GetTagsAsync()
-		{
-			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var tags = await service.GetTagsAsync();
-
-			tags.Count().Should().BeGreaterThan( 0 );
-		}
-
-		[Test]
+		[ Test ]
 		public void GetTags()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
@@ -98,23 +65,13 @@ namespace ShipStationAccessTests.Orders
 			tags.Count().Should().BeGreaterThan( 0 );
 		}
 
-		public async Task TrottlingTest()
+		[ Test ]
+		public async Task GetTagsAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var endDate = DateTime.UtcNow; //new DateTime( 2015, 06, 01, 22, 45, 00, DateTimeKind.Utc );
+			var tags = await service.GetTagsAsync();
 
-			var orders = service.GetOrders( endDate.AddDays( -1 ), endDate );
-
-			var tasks = new List< Task >();
-
-			foreach( var i in Enumerable.Range( 0, 500 ) )
-			{
-				tasks.Add( service.GetOrdersAsync( endDate.AddDays( -1 ), endDate ) );
-			}
-
-			await Task.WhenAll( tasks );
-
-			orders.Count().Should().BeGreaterThan( 0 );
+			tags.Count().Should().BeGreaterThan( 0 );
 		}
 
 		[ Test ]
@@ -146,6 +103,44 @@ namespace ShipStationAccessTests.Orders
 
 			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(30)";
 			await service.UpdateOrderAsync( orderToChange );
+		}
+
+		[ Test ]
+		public void UpdateOrderOnGetOrders()
+		{
+			var rand = new Random();
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			Func< ShipStationOrder, ShipStationOrder > updateOrderLocation = o =>
+			{
+				if( o.Items.Count == 0 )
+					return o;
+
+				o.Items[ 0 ].WarehouseLocation = "AA{0}({1})".FormatWith( rand.Next( 1, 99 ), rand.Next( 1, 50 ) );
+				service.UpdateOrder( o );
+				return o;
+			};
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -2 ), DateTime.UtcNow, updateOrderLocation );
+
+			orders.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public async Task UpdateOrderOnGetOrdersAsync()
+		{
+			var rand = new Random();
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			Func< ShipStationOrder, Task< ShipStationOrder > > updateOrderLocation = async o =>
+			{
+				if( o.Items.Count == 0 )
+					return o;
+
+				o.Items[ 0 ].WarehouseLocation = "AA{0}({1})".FormatWith( rand.Next( 1, 99 ), rand.Next( 1, 50 ) );
+				await service.UpdateOrderAsync( o );
+				return o;
+			};
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, updateOrderLocation );
+
+			orders.Count().Should().BeGreaterThan( 0 );
 		}
 
 		[ Test ]
@@ -189,44 +184,6 @@ namespace ShipStationAccessTests.Orders
 				warehouseLocations.AddItems( "AA25(35),DD(1)", orderToCahnge.Items.Select( x => x.OrderItemId ) );
 			}
 			await service.UpdateOrderItemsWarehouseLocationsAsync( warehouseLocations );
-		}
-
-		[ Test ]
-		public void UpdateOrderOnGetOrders()
-		{
-			var rand = new Random();
-			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			Func< ShipStationOrder, ShipStationOrder > updateOrderLocation = o =>
-			{
-				if( o.Items.Count == 0 )
-					return o;
-
-				o.Items[ 0 ].WarehouseLocation = "AA{0}({1})".FormatWith( rand.Next( 1, 99 ), rand.Next( 1, 50 ) );
-				service.UpdateOrder( o );
-				return o;
-			};
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -2 ), DateTime.UtcNow, updateOrderLocation );
-
-			orders.Count().Should().BeGreaterThan( 0 );
-		}
-
-		[ Test ]
-		public async Task UpdateOrderOnGetOrdersAsync()
-		{
-			var rand = new Random();
-			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			Func< ShipStationOrder, Task< ShipStationOrder > > updateOrderLocation = async o =>
-			{
-				if( o.Items.Count == 0 )
-					return o;
-
-				o.Items[ 0 ].WarehouseLocation = "AA{0}({1})".FormatWith( rand.Next( 1, 99 ), rand.Next( 1, 50 ) );
-				await service.UpdateOrderAsync( o );
-				return o;
-			};
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, updateOrderLocation );
-
-			orders.Count().Should().BeGreaterThan( 0 );
 		}
 
 		[ Test ]
