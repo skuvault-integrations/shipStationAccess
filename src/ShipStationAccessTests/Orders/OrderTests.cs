@@ -12,6 +12,7 @@ using Serilog;
 using ShipStationAccess;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Models.WarehouseLocation;
 using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccessTests.Orders
@@ -145,6 +146,49 @@ namespace ShipStationAccessTests.Orders
 
 			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(30)";
 			await service.UpdateOrderAsync( orderToChange );
+		}
+
+		[ Test ]
+		public void UpdateOrderItemsWarehouseLocations()
+		{
+			var numbers = new List< string > { "100274", "100275" };
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			var ordersToChange = orders.Select( o => o ).Where( or => or.IsValid() && numbers.Contains( or.OrderNumber ) ).ToList();
+			if( ordersToChange.Count == 0 )
+			{
+				Assert.Fail( "No order found to update" );
+				return;
+			}
+
+			var warehouseLocations = new ShipStationWarehouseLocations();
+			foreach( var orderToCahnge in ordersToChange )
+			{
+				warehouseLocations.AddItems( "AA22(30)", orderToCahnge.Items.Select( x => x.OrderItemId ) );
+			}
+
+			service.UpdateOrderItemsWarehouseLocations( warehouseLocations );
+		}
+
+		[ Test ]
+		public async Task UpdateOrderItemsWarehouseLocationsAsync()
+		{
+			var numbers = new List< string > { "100274", "100275" };
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			var ordersToChange = orders.Select( o => o ).Where( or => or.IsValid() && numbers.Contains( or.OrderNumber ) ).ToList();
+			if( ordersToChange.Count == 0 )
+			{
+				Assert.Fail( "No order found to update" );
+				return;
+			}
+
+			var warehouseLocations = new ShipStationWarehouseLocations();
+			foreach( var orderToCahnge in ordersToChange )
+			{
+				warehouseLocations.AddItems( "AA25(35),DD(1)", orderToCahnge.Items.Select( x => x.OrderItemId ) );
+			}
+			await service.UpdateOrderItemsWarehouseLocationsAsync( warehouseLocations );
 		}
 
 		[ Test ]

@@ -96,6 +96,8 @@
     <Compile Include="V2\Models\Order\ShipStationOrderInsuranceOptions.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrderInternationalOptions.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrders.cs" />
+    <Compile Include="V2\Models\WarehouseLocation\ShipStationWarehouseLocations.cs" />
+    <Compile Include="V2\Models\WarehouseLocation\ShipStationWarehouseLocation.cs" />
     <Compile Include="V2\Models\ShipStationAddress.cs" />
     <Compile Include="V2\Models\ShipStationItemWeight.cs" />
     <Compile Include="V2\Models\ShipStationCredentials.cs" />

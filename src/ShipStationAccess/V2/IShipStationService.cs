@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Models.TagList;
+using ShipStationAccess.V2.Models.WarehouseLocation;
 
 namespace ShipStationAccess.V2
 {
@@ -15,10 +16,13 @@ namespace ShipStationAccess.V2
 		void UpdateOrder( ShipStationOrder order );
 		Task UpdateOrderAsync( ShipStationOrder order );
 
+		void UpdateOrderItemsWarehouseLocations( ShipStationWarehouseLocations warehouseLocations );
+		Task UpdateOrderItemsWarehouseLocationsAsync( ShipStationWarehouseLocations warehouseLocations );
+
 		IEnumerable< ShipStationStore > GetStores();
 		Task< IEnumerable< ShipStationStore > > GetStoresAsync();
 
 		IEnumerable< ShipStationTag > GetTags();
-		Task < IEnumerable< ShipStationTag > > GetTagsAsync();
+		Task< IEnumerable< ShipStationTag > > GetTagsAsync();
 	}
 }

@@ -6,6 +6,7 @@
 		public static readonly ShipStationCommand GetOrders = new ShipStationCommand( "/Orders/List" );
 		public static readonly ShipStationCommand GetTags = new ShipStationCommand( "/Accounts/ListTags " );
 		public static readonly ShipStationCommand CreateUpdateOrder = new ShipStationCommand( "/Orders/CreateOrder" );
+		public static readonly ShipStationCommand UpdateOrderItemsWarehouseLocation = new ShipStationCommand( "/Orders/UpdateWarehouseLocation" );
 		public static readonly ShipStationCommand GetStores = new ShipStationCommand( "/Stores" );
 
 		private ShipStationCommand( string command )

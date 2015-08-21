@@ -10,6 +10,7 @@ using ShipStationAccess.V2.Models.Command;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Models.TagList;
+using ShipStationAccess.V2.Models.WarehouseLocation;
 using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccess.V2
@@ -218,6 +219,32 @@ namespace ShipStationAccess.V2
 						throw;
 				}
 			} );
+		}
+		#endregion
+
+		#region Update Order Items Warehouse Locations
+		public void UpdateOrderItemsWarehouseLocations( ShipStationWarehouseLocations warehouseLocations )
+		{
+			foreach( var warehouseLocation in warehouseLocations.GetWarehouseLocationsToSend() )
+			{
+				var json = warehouseLocation.SerializeToJson();
+				ActionPolicies.Submit.Do( () =>
+				{
+					this._webRequestServices.PostData( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json );
+				} );
+			}
+		}
+
+		public async Task UpdateOrderItemsWarehouseLocationsAsync( ShipStationWarehouseLocations warehouseLocations )
+		{
+			foreach( var warehouseLocation in warehouseLocations.GetWarehouseLocationsToSend() )
+			{
+				var json = warehouseLocation.SerializeToJson();
+				await ActionPolicies.SubmitAsync.Do( async () =>
+				{
+					await this._webRequestServices.PostDataAsync( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json );
+				} );
+			}
 		}
 		#endregion
 
