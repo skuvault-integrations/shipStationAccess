@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace ShipStationAccess.V2.Models.Order
 {
@@ -9,7 +10,7 @@ namespace ShipStationAccess.V2.Models.Order
 		public string Contents{ get; set; }
 
 		[ DataMember( Name = "customsItems" ) ]
-		public ShipStationCustomItems CustomsItems{ get; set; }
+		public IList< ShipStationCustomItems > CustomsItems{ get; set; }
 
 		[ DataMember( Name = "nonDelivery" ) ]
 		public string NonDelivery{ get; set; }
