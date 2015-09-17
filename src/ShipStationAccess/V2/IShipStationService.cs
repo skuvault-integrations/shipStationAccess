@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Models.ShippingLabel;
 using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Models.TagList;
 using ShipStationAccess.V2.Models.WarehouseLocation;
@@ -27,5 +28,7 @@ namespace ShipStationAccess.V2
 
 		IEnumerable< ShipStationTag > GetTags();
 		Task< IEnumerable< ShipStationTag > > GetTagsAsync();
+
+		ShipStationShippingLabel CreateAndGetShippingLabel( string orderId );
 	}
 }

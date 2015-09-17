@@ -10,6 +10,12 @@
 		public static readonly ShipStationParam OrdersStatus = new ShipStationParam( "orderStatus" );
 		public static readonly ShipStationParam PageSize = new ShipStationParam( "pageSize" );
 		public static readonly ShipStationParam Page = new ShipStationParam( "page" );
+		public static readonly ShipStationParam OrderId = new ShipStationParam( "orderId" );
+		public static readonly ShipStationParam CarrierCode = new ShipStationParam( "carrierCode" );
+		public static readonly ShipStationParam ServiceCode = new ShipStationParam( "serviceCode" );
+		public static readonly ShipStationParam Confirmation = new ShipStationParam( "confirmation" );
+		public static readonly ShipStationParam ShipDate = new ShipStationParam( "shipDate" );
+
 
 		private ShipStationParam( string name )
 		{

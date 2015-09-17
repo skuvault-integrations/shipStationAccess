@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Models.ShippingLabel;
 using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Models.TagList;
 using ShipStationAccess.V2.Models.WarehouseLocation;
@@ -45,6 +47,26 @@ namespace ShipStationAccess.V2
 			} );
 
 			return tags;
+		}
+
+		public ShipStationShippingLabel CreateAndGetShippingLabel( string storeIdAndOrderId )
+		{
+			var splitStoreIdAndOrderId = storeIdAndOrderId.Split( '-' ); 
+			var storeId = splitStoreIdAndOrderId[ 0 ];
+			var orderId = splitStoreIdAndOrderId[ 1 ];
+			//return ShipStationShippingLabel.GetMockShippingLabel();
+			ShipStationShippingLabel label = null;
+			 ActionPolicies.Get.Do( () =>
+			{
+				var order = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, "?orderNumber=" + orderId + "&storeId=" + storeId );
+				if( order.Orders.Any() )
+				{
+					var date = order.Orders.First().ShipDate.Value.ToString("yyyy-MM-dd");
+					//var request = ShipStationShippingLabelRequest.From( order, true );
+					//label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, request.SerializeToJson() );
+				}
+			} );
+			return label;
 		}
 
 		#region Get Orders

@@ -20,6 +20,7 @@ namespace ShipStationAccessTests.Orders
 	{
 		private readonly IShipStationFactory ShipStationFactory = new ShipStationFactory();
 		private ShipStationCredentials _credentials;
+		private IEnumerable< ShipStationOrder > orders;
 
 		[ SetUp ]
 		public void Init()
@@ -36,6 +37,10 @@ namespace ShipStationAccessTests.Orders
 
 			if( testConfig != null )
 				this._credentials = new ShipStationCredentials( testConfig.ApiKey, testConfig.ApiSecret );
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			this.orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			if( !this.orders.Any() )
+				throw new Exception( "Add some orders to shipstation before running tests" );
 		}
 
 		[ Test ]
@@ -72,6 +77,15 @@ namespace ShipStationAccessTests.Orders
 			var tags = await service.GetTagsAsync();
 
 			tags.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public async Task GetShippingLabelAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			//var order = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow ).First();
+			var label = service.CreateAndGetShippingLabel( this.orders.First().OrderId.ToString() );
+			label.Should().NotBeNull();
 		}
 
 		[ Test ]
