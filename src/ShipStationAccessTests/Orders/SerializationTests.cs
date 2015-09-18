@@ -39,7 +39,7 @@ namespace ShipStationAccessTests.Orders
 		public void Date_Deserialization()
 		{
 			//------------ Arrange
-			var pstDate = "2015-06-06T00:29:35.0000000";
+			var pstDate = "\"2015-06-06T00:29:35.0000000\"";
 
 			//------------ Act
 			var serializedDate = pstDate.DeserializeJson< DateTime >();
@@ -52,13 +52,13 @@ namespace ShipStationAccessTests.Orders
 		public void Date_Serialization()
 		{
 			//------------ Arrange
-			var pstDate = "2015-06-06T00:29:35.0000000";
+			var pstDate = "\"2015-06-06T00:29:35.0000000\"";
 
 			//------------ Act
 			var serializedDate = pstDate.DeserializeJson< DateTime >();
 
 			//------------ Assert
-			serializedDate.SerializeToJson().Trim( '"' ).Should().Be( pstDate );
+			serializedDate.SerializeToJson().Should().Be( pstDate );
 		}
 
 		[ Test ]
