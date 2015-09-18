@@ -1,49 +1,44 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Globalization;
-using ServiceStack.Text;
+using Newtonsoft.Json;
 
 namespace ShipStationAccess.V2.Services
 {
 	public static class JsonSerialization
 	{
-		private static readonly TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById( "Pacific Standard Time" );
-
-		private static JsConfigScope BeginJsConfigScope()
+		private static JsonSerializerSettings JsonSerializerSettings
 		{
-			var config = JsConfig.BeginScope();
-			config.ExcludeTypeInfo = true;
-			config.DateHandler = DateHandler.ISO8601;
-			config.AlwaysUseUtc = true;
-			config.AssumeUtc = true;
-			config.ConvertObjectTypesIntoStringDictionary = true;
-			config.TryToParseNumericType = true;
-			config.ParsePrimitiveFloatingPointTypes = ParseAsType.Single;
-			config.ParsePrimitiveIntegerTypes = ParseAsType.Int32 | ParseAsType.Int64;
-			config.IncludeNullValues = true;
-			JsConfig< DateTime >.SerializeFn = SerializeDateTime;
-			JsConfig< DateTime? >.SerializeFn = SerializeDateTime;
-			JsConfig< DateTime >.DeSerializeFn = DeserializeDateTime;
-			JsConfig< DateTime? >.DeSerializeFn = DeserializeDateTimeNullable;
-			return config;
-		}
-
-		public static string SerializeToJson( this object @object )
-		{
-			using( var config = BeginJsConfigScope() )
+			get
 			{
-				var serializeToString = JsonSerializer.SerializeToString( @object );
-				return serializeToString;
+				var settings = new JsonSerializerSettings
+				{
+					NullValueHandling = NullValueHandling.Ignore,
+					DefaultValueHandling = DefaultValueHandling.Include
+				};
+
+				settings.Converters.Add(new DateTimeConverter());
+				settings.Converters.Add(new DateTimeNullConverter());
+				return settings;
 			}
 		}
 
-		public static T DeserializeJson< T >( this string jsonContent )
+		public static string SerializeToJson(this object @object)
 		{
-			using( var config = BeginJsConfigScope() )
-				return JsonSerializer.DeserializeFromString< T >( jsonContent );
+			return JsonConvert.SerializeObject(@object, JsonSerializerSettings);
 		}
 
-		#region Custom serialization
-		private static string SerializeDateTime( DateTime? dateTimeNullable )
+		public static T DeserializeJson<T>(this string jsonContent)
+		{
+			return JsonConvert.DeserializeObject<T>(jsonContent, JsonSerializerSettings);
+		}
+	}
+
+	public static class DateTimeSerializeHelper
+	{
+		private static readonly TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById( "Pacific Standard Time" );
+
+		public static string SerializeDateTime( DateTime? dateTimeNullable )
 		{
 			if( !dateTimeNullable.HasValue )
 				return string.Empty;
@@ -51,7 +46,7 @@ namespace ShipStationAccess.V2.Services
 			return SerializeDateTime( dateTimeNullable.Value );
 		}
 
-		private static string SerializeDateTime( DateTime utcTime )
+		public static string SerializeDateTime( DateTime utcTime )
 		{
 			if( utcTime.Kind == DateTimeKind.Unspecified || utcTime.Kind == DateTimeKind.Local )
 				utcTime = DateTime.SpecifyKind( utcTime, DateTimeKind.Utc );
@@ -59,17 +54,19 @@ namespace ShipStationAccess.V2.Services
 			if( utcTime == DateTime.MinValue || utcTime == DateTime.MaxValue || utcTime == default(DateTime) )
 				return utcTime.ToString( CultureInfo.InvariantCulture );
 
-			var pstTime = TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone ).ToString( "yyyy-MM-ddTHH:mm:ss.fffffff", CultureInfo.InvariantCulture );
+			var pstTime =
+				TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone )
+					.ToString( "yyyy-MM-ddTHH:mm:ss.fffffff", CultureInfo.InvariantCulture );
 			return pstTime;
 		}
 
-		private static DateTime? DeserializeDateTimeNullable( string pstStringTime )
+		public static DateTime? DeserializeDateTimeNullable( string pstStringTime )
 		{
 			var dateTime = DeserializeDateTime( pstStringTime );
 			return dateTime == default(DateTime) ? ( DateTime? )null : dateTime;
 		}
 
-		private static DateTime DeserializeDateTime( string pstStringTime )
+		public static DateTime DeserializeDateTime( string pstStringTime )
 		{
 			if( string.IsNullOrWhiteSpace( pstStringTime ) )
 				return default(DateTime);
@@ -92,6 +89,61 @@ namespace ShipStationAccess.V2.Services
 
 			return utcDate;
 		}
-		#endregion
+	}
+
+	public class DateTimeConverter: JsonConverter
+	{
+		public override bool CanConvert( Type objectType )
+		{
+			return ( objectType == typeof( DateTime ) );
+		}
+
+		public override void WriteJson( JsonWriter writer, object value, JsonSerializer serializer )
+		{
+			var date = ( DateTime )value;
+			writer.WriteValue( DateTimeSerializeHelper.SerializeDateTime( date ) );
+		}
+
+		public override bool CanRead
+		{
+			get { return true; }
+		}
+
+		public override object ReadJson( JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer )
+		{
+			var dataString = reader.Value.ToString();
+			var date = DateTimeSerializeHelper.DeserializeDateTime( dataString );
+
+			return date;
+		}
+	}
+
+	public class DateTimeNullConverter: JsonConverter
+	{
+		public override bool CanConvert( Type objectType )
+		{
+			return ( objectType == typeof( DateTime? ) );
+		}
+
+		public override void WriteJson( JsonWriter writer, object value, JsonSerializer serializer )
+		{
+			var date = ( DateTime? )value;
+			writer.WriteValue( DateTimeSerializeHelper.SerializeDateTime( date ) );
+		}
+
+		public override bool CanRead
+		{
+			get { return true; }
+		}
+
+		public override object ReadJson( JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer )
+		{
+			if( reader.Value == null )
+				return null;
+			var dataString = reader.Value.ToString();
+			var date = DateTimeSerializeHelper.DeserializeDateTime( dataString );
+
+			return date;
+		}
 	}
 }
