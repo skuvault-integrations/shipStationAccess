@@ -49,23 +49,49 @@ namespace ShipStationAccess.V2
 			return tags;
 		}
 
-		public ShipStationShippingLabel CreateAndGetShippingLabel( string storeIdAndOrderId )
+		public ShipStationShippingLabel CreateAndGetShippingLabel( string storeId, string orderNumber,  DateTime shipDate,  bool testLabel = false )
 		{
-			var splitStoreIdAndOrderId = storeIdAndOrderId.Split( '-' ); 
-			var storeId = splitStoreIdAndOrderId[ 0 ];
-			var orderId = splitStoreIdAndOrderId[ 1 ];
 			//return ShipStationShippingLabel.GetMockShippingLabel();
 			ShipStationShippingLabel label = null;
-			 ActionPolicies.Get.Do( () =>
+			ShipStationOrder order = null;
+			ActionPolicies.Get.Do( () =>
 			{
-				var order = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, "?orderNumber=" + orderId + "&storeId=" + storeId );
-				if( order.Orders.Any() )
+				try
 				{
-					var date = order.Orders.First().ShipDate.Value.ToString("yyyy-MM-dd");
-					//var request = ShipStationShippingLabelRequest.From( order, true );
-					//label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, request.SerializeToJson() );
+					var orders = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ParamsBuilder.CreateStoreIdOrderNumberParams( storeId, orderNumber ) );
+					order = orders.Orders.FirstOrDefault();
+				}
+				catch( WebException x )
+				{
+					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
+						ShipStationLogger.Log.Error( x, "Error creating label. Encountered 500 Internal Error. StoreId: {storeId}, OrderNumber: {orderNumber}", storeId, orderNumber );
+					else
+						throw;
 				}
 			} );
+			if( order != null )
+			{
+				ActionPolicies.Submit.Do( () =>
+				{
+					try
+					{
+						//If carrier has not been set in ShipStation for this order
+						if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
+							return;
+						var endpoint = ShipStationShippingLabelRequest.From( order, shipDate, testLabel ).SerializeToJson();
+						label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint );
+					}
+					catch( WebException x )
+					{
+						if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
+							ShipStationLogger.Log.Error( x, "Error creating label. Encountered 500 Internal Error. StoreId: {storeId}, OrderNumber: {orderNumber}", storeId, orderNumber );
+						else
+							throw;
+					}
+				} );
+			}
+			else
+				ShipStationLogger.Log.Trace( "Error creating label. Order not found. StoreId: {storeId}, OrderNumber: {orderNumber}", storeId, orderNumber );
 			return label;
 		}
 
@@ -116,8 +142,7 @@ namespace ShipStationAccess.V2
 					} );
 				} while( currentPage <= pagesCount );
 
-				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}",
-					_webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
 			};
 
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
@@ -184,8 +209,7 @@ namespace ShipStationAccess.V2
 					} );
 				} while( currentPage <= pagesCount );
 
-				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}",
-					_webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
 			};
 
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );

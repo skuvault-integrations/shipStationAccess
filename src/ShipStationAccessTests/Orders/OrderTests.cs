@@ -20,7 +20,6 @@ namespace ShipStationAccessTests.Orders
 	{
 		private readonly IShipStationFactory ShipStationFactory = new ShipStationFactory();
 		private ShipStationCredentials _credentials;
-		private IEnumerable< ShipStationOrder > orders;
 
 		[ SetUp ]
 		public void Init()
@@ -37,10 +36,6 @@ namespace ShipStationAccessTests.Orders
 
 			if( testConfig != null )
 				this._credentials = new ShipStationCredentials( testConfig.ApiKey, testConfig.ApiSecret );
-			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			this.orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
-			if( !this.orders.Any() )
-				throw new Exception( "Add some orders to shipstation before running tests" );
 		}
 
 		[ Test ]
@@ -80,11 +75,15 @@ namespace ShipStationAccessTests.Orders
 		}
 
 		[ Test ]
-		public async Task GetShippingLabelAsync()
+		public void GetShippingLabelAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			//var order = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow ).First();
-			var label = service.CreateAndGetShippingLabel( this.orders.First().OrderId.ToString() );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			var order = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment && or.OrderNumber == 100339.ToString() );
+
+			if( order == null )
+				Assert.Fail( "No order found to update" );
+			var label = service.CreateAndGetShippingLabel( order.AdvancedOptions.StoreId.ToString(), order.OrderNumber, DateTime.UtcNow );
 			label.Should().NotBeNull();
 		}
 

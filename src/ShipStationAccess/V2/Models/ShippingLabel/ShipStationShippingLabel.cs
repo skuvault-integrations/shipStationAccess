@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using ShipStationAccess.V2.Models.Order;
 
@@ -43,7 +44,7 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 	public sealed class ShipStationShippingLabelRequest
 	{
 		[ DataMember( Name = "orderId" ) ]
-		public long OrderId{ get; set; }
+		public string OrderId{ get; set; }
 
 		[ DataMember( Name = "carrierCode" ) ]
 		public string CarrierCode{ get; set; }
@@ -62,16 +63,16 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 		[ DataMember( Name = "testLabel" ) ]
 		public bool TestLabel{ get; set; }
 
-		public static ShipStationShippingLabelRequest From( ShipStationOrder shipStationOrder, bool isTest )
+		public static ShipStationShippingLabelRequest From( ShipStationOrder shipStationOrder, DateTime shipDate, bool isTest )
 		{
 			return new ShipStationShippingLabelRequest()
 			{
-				OrderId = shipStationOrder.OrderId,
-				CarrierCode = "fedex",
-				ServiceCode = "fedex_2day",
-				PackageCode = "package",
+				OrderId = shipStationOrder.OrderId.ToString(),
+				CarrierCode = shipStationOrder.CarrierCode,
+				ServiceCode = shipStationOrder.ServiceCode,
+				PackageCode = shipStationOrder.PackageCode,
 				Confirmation = shipStationOrder.Confirmation,
-				ShipDate = shipStationOrder.ShipDate.Value.ToString( "yyyy-MM-dd" ),
+				ShipDate = shipDate.ToString( "yyyy-MM-dd" ),
 				TestLabel = isTest
 			};
 		}

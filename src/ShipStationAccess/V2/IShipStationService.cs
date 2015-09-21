@@ -29,6 +29,6 @@ namespace ShipStationAccess.V2
 		IEnumerable< ShipStationTag > GetTags();
 		Task< IEnumerable< ShipStationTag > > GetTagsAsync();
 
-		ShipStationShippingLabel CreateAndGetShippingLabel( string orderId );
+		ShipStationShippingLabel CreateAndGetShippingLabel( string storeId, string orderNumber, DateTime shipDate, bool testLabel = false );
 	}
 }
