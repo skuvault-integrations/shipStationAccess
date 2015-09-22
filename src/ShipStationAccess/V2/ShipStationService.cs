@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Netco.Extensions;
+using ShipStationAccess.V2.Exceptions;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
@@ -77,7 +78,9 @@ namespace ShipStationAccess.V2
 					{
 						//If carrier has not been set in ShipStation for this order
 						if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
-							return;
+							throw new ShipStationLabelException( "Has a carrier been selected in ShipStation for this order?" );
+						if( order.ShippingAddress == null )
+							throw new ShipStationLabelException( "Has a shipping address been set in ShipStation?" );
 						var endpoint = ShipStationShippingLabelRequest.From( order, shipDate, testLabel ).SerializeToJson();
 						label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint );
 					}
