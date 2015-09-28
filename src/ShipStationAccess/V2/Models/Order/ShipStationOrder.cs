@@ -185,6 +185,7 @@ namespace ShipStationAccess.V2.Models.Order
 		shipped = 3,
 		cancelled = 4,
 		on_hold = 5,
+		pending_fulfillment = 6
 		// ReSharper restore InconsistentNaming
 	}
 }
