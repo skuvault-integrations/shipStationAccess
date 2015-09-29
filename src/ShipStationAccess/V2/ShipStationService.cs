@@ -159,7 +159,7 @@ namespace ShipStationAccess.V2
 						{
 							if ( WebRequestServices.CanSkipException( e ) )
 							{
-								ShipStationLogger.Log.Warn( "Skipped get orders request page {0} of request {1} due to internal error on ShipStation's side" );
+								ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint  );
 							} else throw;
 						}
 
