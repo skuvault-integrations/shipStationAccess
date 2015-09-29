@@ -18,7 +18,8 @@ namespace ShipStationAccess.V2
 	public sealed class ShipStationService: IShipStationService
 	{
 		private readonly WebRequestServices _webRequestServices;
-		private const int RequestMaxLimit = 100;
+		// lowered max limit for less order loss on Shipsation API's internal errors
+		private const int RequestMaxLimit = 20;
 
 		public ShipStationService( ShipStationCredentials credentials )
 		{
@@ -135,6 +136,7 @@ namespace ShipStationAccess.V2
 				}
 			};
 
+
 			Func< string, Task > downloadOrders = async endPoint =>
 			{
 				var pagesCount = int.MaxValue;
@@ -149,16 +151,32 @@ namespace ShipStationAccess.V2
 
 					await ActionPolicies.GetAsync.Do( async () =>
 					{
-						var ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
-						if( pagesCount == int.MaxValue )
-						{
-							pagesCount = ordersWithinPage.TotalPages;
-							ordersExpected = ordersWithinPage.TotalOrders;
+						ShipStationOrders ordersWithinPage = null;
+						try {
+							ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
 						}
-						currentPage++;
-						ordersCount += ordersWithinPage.Orders.Count;
+						catch ( WebException e )
+						{
+							if ( WebRequestServices.CanSkipException( e ) )
+							{
+								ShipStationLogger.Log.Warn( "Skipped get orders request page {0} of request {1} due to internal error on ShipStation's side" );
+							} else throw;
+						}
 
-						await processOrders( ordersWithinPage );
+						currentPage++;
+
+						if ( ordersWithinPage != null )
+						{
+							if ( pagesCount == int.MaxValue )
+							{
+								pagesCount = ordersWithinPage.TotalPages;
+								ordersExpected = ordersWithinPage.TotalOrders;
+							}
+
+							ordersCount += ordersWithinPage.Orders.Count;
+
+							await processOrders( ordersWithinPage );
+						}
 					} );
 				} while( currentPage <= pagesCount );
 

@@ -22,6 +22,12 @@ namespace ShipStationAccess.V2.Services
 			this._credentials = credentials;
 		}
 
+		public static bool CanSkipException( WebException e )
+		{
+			var errorResponse = e.Response as HttpWebResponse;
+			return errorResponse != null && errorResponse.StatusCode == HttpStatusCode.InternalServerError;
+		}
+
 		public T GetResponse< T >( ShipStationCommand command, string commandParams )
 		{
 			while( true )
