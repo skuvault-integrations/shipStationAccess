@@ -77,10 +77,12 @@ namespace ShipStationAccess.V2
 					try
 					{
 						//If carrier has not been set in ShipStation for this order
-						if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
+						if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) || string.IsNullOrWhiteSpace( order.PackageCode ))
 							throw new ShipStationLabelException( "Has a carrier been selected in ShipStation for this order?" );
+						if( string.IsNullOrWhiteSpace( order.Confirmation ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
+							throw new ShipStationLabelException( "Has a confirmation type been selected in ShipStation for this order?" );
 						if( order.ShippingAddress == null )
-							throw new ShipStationLabelException( "Has a shipping address been set in ShipStation?" );
+							throw new ShipStationLabelException( "Has a shipping address been selected in ShipStation for this order?" );
 						var endpoint = ShipStationShippingLabelRequest.From( order, shipDate, testLabel ).SerializeToJson();
 						label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint );
 					}
