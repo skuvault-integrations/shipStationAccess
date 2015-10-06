@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Netco.ActionPolicyServices;
 using Netco.Utils;
+using ShipStationAccess.V2.Exceptions;
 
 namespace ShipStationAccess.V2.Misc
 {
@@ -15,10 +16,11 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ExceptionHandler _exceptionHandler = delegate( Exception x )
 		{
+			if( x is ShipStationLabelException )
+				return false;
 			var webX = x as WebException;
 			if( webX == null )
 				return true;
-
 			return webX.Response.GetHttpStatusCode() != HttpStatusCode.Unauthorized;
 		};
 
