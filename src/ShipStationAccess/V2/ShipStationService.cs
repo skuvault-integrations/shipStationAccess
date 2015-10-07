@@ -61,7 +61,10 @@ namespace ShipStationAccess.V2
 				try
 				{
 					var orders = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ParamsBuilder.CreateStoreIdOrderNumberParams( storeId, orderNumber ) );
-					order = orders.Orders.FirstOrDefault();
+					var filteredOrders = orders.Orders.Where( s => s.OrderStatus !=ShipStationOrderStatusEnum.cancelled ).ToList();
+					if( filteredOrders.Count() > 1 )
+						throw new ShipStationLabelException( "Encountered multiple orders with the same order number" );
+					order = filteredOrders.FirstOrDefault();
 				}
 				catch( WebException x )
 				{

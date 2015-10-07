@@ -17,7 +17,7 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 		[ DataMember( Name = "insuranceCost" ) ]
 		public decimal InsuranceCost{ get; set; }
 
-		[ DataMember( Name = "insuranceCost" ) ]
+		[ DataMember( Name = "trackingNumber" ) ]
 		public string TrackingNumber{ get; set; }
 
 		[ DataMember( Name = "labelData" ) ]
