@@ -75,6 +75,19 @@ namespace ShipStationAccessTests.Orders
 		}
 
 		[ Test ]
+		public void GetShippingLabelAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			var order = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment && or.OrderNumber == 100339.ToString() );
+
+			if( order == null )
+				Assert.Fail( "No order found to update" );
+			var label = service.CreateAndGetShippingLabel( order.AdvancedOptions.StoreId.ToString(), order.OrderNumber, DateTime.UtcNow );
+			label.Should().NotBeNull();
+		}
+
+		[ Test ]
 		public void UpdateOrder()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );

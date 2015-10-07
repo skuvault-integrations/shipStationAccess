@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -129,6 +130,42 @@ namespace ShipStationAccess.V2.Services
 			{
 				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
 				throw;
+			}
+		}
+
+		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent )
+		{
+			while( true )
+			{
+				var request = this.CreateServicePostRequest( command, jsonContent );
+				this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				var resetDelay = 0;
+				try
+				{
+					using( var response = request.GetResponse() )
+					{
+						var shipStationResponse = this.ProcessResponse( response );
+						if( !shipStationResponse.IsThrottled )
+							return this.ParseResponse< T >( shipStationResponse.Data );
+						resetDelay = shipStationResponse.ResetInSeconds;
+					}
+				}
+				catch( WebException ex )
+				{
+					this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, ex.Response.GetHttpStatusCode(), jsonContent, ex );
+					var response = ex.Response;
+					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
+					switch( statusCode )
+					{
+						case 429:
+							resetDelay = GetLimitReset( response );
+							break;
+						default:
+							throw;
+					}
+				}
+
+				this.CreateDelay( resetDelay ).Wait();
 			}
 		}
 
