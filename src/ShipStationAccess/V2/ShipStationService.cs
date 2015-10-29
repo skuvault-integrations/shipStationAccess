@@ -80,7 +80,6 @@ namespace ShipStationAccess.V2
 				{
 					try
 					{
-						//If carrier has not been set in ShipStation for this order
 						if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) || string.IsNullOrWhiteSpace( order.PackageCode ))
 							throw new ShipStationLabelException( "Has a carrier been selected in ShipStation for this order?" );
 						if( string.IsNullOrWhiteSpace( order.Confirmation ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
@@ -93,9 +92,8 @@ namespace ShipStationAccess.V2
 					catch( WebException x )
 					{
 						if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-							ShipStationLogger.Log.Error( x, "Error creating label. Encountered 500 Internal Error. StoreId: {storeId}, OrderNumber: {orderNumber}", storeId, orderNumber );
-						else
-							throw;
+							throw new ShipStationLabelException( "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
+						throw;
 					}
 				} );
 			}
