@@ -358,8 +358,12 @@ namespace ShipStationAccess.V2
 			foreach( var order in orders )
 			{
 				var store = stores.FirstOrDefault( s => s.StoreId == order.AdvancedOptions.StoreId );
-				if( store != null )
+				if ( store != null )
+				{
 					order.MarketplaceId = store.MarketplaceId;
+					order.MarketplaceName = store.MarketplaceName;
+				}
+ 					
 			}
 		}
 
@@ -370,8 +374,11 @@ namespace ShipStationAccess.V2
 			foreach( var order in orders )
 			{
 				var store = stores.FirstOrDefault( s => s.StoreId == order.AdvancedOptions.StoreId );
-				if( store != null )
+				if ( store != null )
+				{
 					order.MarketplaceId = store.MarketplaceId;
+					order.MarketplaceName = store.MarketplaceName;
+				}					
 			}
 		}
 		#endregion

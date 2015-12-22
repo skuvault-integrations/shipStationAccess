@@ -10,5 +10,8 @@ namespace ShipStationAccess.V2.Models.Store
 
 		[ DataMember( Name = "marketplaceId" ) ]
 		public int MarketplaceId{ get; set; }
+
+		[ DataMember( Name = "marketplaceName" ) ]
+		public string MarketplaceName{ get; set; }
 	}
 }

@@ -109,6 +109,8 @@ namespace ShipStationAccess.V2.Models.Order
 
 		public int MarketplaceId{ get; set; }
 
+		public string MarketplaceName{ get; set; }
+
 		#region Equality members
 		public bool Equals( ShipStationOrder other )
 		{
