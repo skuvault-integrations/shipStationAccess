@@ -4,6 +4,9 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CSharp.RuntimeBinder;
+using Newtonsoft.Json;
+using ShipStationAccess.V2.Exceptions;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
@@ -133,7 +136,7 @@ namespace ShipStationAccess.V2.Services
 			}
 		}
 
-		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent )
+		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
 		{
 			while( true )
 			{
@@ -152,7 +155,8 @@ namespace ShipStationAccess.V2.Services
 				}
 				catch( WebException ex )
 				{
-					this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, ex.Response.GetHttpStatusCode(), jsonContent, ex );
+					var responseString = ex.Response.GetResponseString();
+					this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, ex.Response.GetHttpStatusCode(), jsonContent, responseString );
 					var response = ex.Response;
 					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
 					switch( statusCode )
@@ -161,11 +165,26 @@ namespace ShipStationAccess.V2.Services
 							resetDelay = GetLimitReset( response );
 							break;
 						default:
+							if( shouldGetExceptionMessage )
+								throw new Exception( this.GetExceptionMessageFromResponse( ex, responseString ), ex );
 							throw;
 					}
 				}
 
 				this.CreateDelay( resetDelay ).Wait();
+			}
+		}
+
+		private string GetExceptionMessageFromResponse( WebException ex, string responseString )
+		{
+			dynamic obj = JsonConvert.DeserializeObject( responseString );
+			try
+			{
+				return $"Shipstation {ex.Message} -- {obj.ExceptionMessage.ToString().TrimEnd( '.' )} ";
+			}
+			catch( RuntimeBinderException )
+			{
+				return ex.Message;
 			}
 		}
 
@@ -275,6 +294,11 @@ namespace ShipStationAccess.V2.Services
 		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, WebException x )
 		{
 			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, x.Response.GetResponseString(), Convert.ToInt32( statusCode ), jsonContent );
+		}
+
+		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, string responseString )
+		{
+			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, responseString, Convert.ToInt32( statusCode ), jsonContent );
 		}
 		#endregion
 	}

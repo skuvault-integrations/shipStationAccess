@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.CSharp.RuntimeBinder;
 using Netco.Extensions;
+using Newtonsoft.Json;
 using ShipStationAccess.V2.Exceptions;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
@@ -40,7 +44,7 @@ namespace ShipStationAccess.V2
 			return tags;
 		}
 
-		public async Task < IEnumerable< ShipStationTag > > GetTagsAsync()
+		public async Task< IEnumerable< ShipStationTag > > GetTagsAsync()
 		{
 			var tags = new List< ShipStationTag >();
 			await ActionPolicies.GetAsync.Do( async () =>
@@ -51,7 +55,7 @@ namespace ShipStationAccess.V2
 			return tags;
 		}
 
-		public ShipStationShippingLabel CreateAndGetShippingLabel( string storeId, string orderNumber,  DateTime shipDate,  bool testLabel = false )
+		public ShipStationShippingLabel CreateAndGetShippingLabel( string storeId, string orderNumber, DateTime shipDate, bool testLabel = false )
 		{
 			//return ShipStationShippingLabel.GetMockShippingLabel();
 			ShipStationShippingLabel label = null;
@@ -61,7 +65,7 @@ namespace ShipStationAccess.V2
 				try
 				{
 					var orders = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ParamsBuilder.CreateStoreIdOrderNumberParams( storeId, orderNumber ) );
-					var filteredOrders = orders.Orders.Where( s => s.OrderStatus !=ShipStationOrderStatusEnum.cancelled ).ToList();
+					var filteredOrders = orders.Orders.Where( s => s.OrderStatus != ShipStationOrderStatusEnum.cancelled ).ToList();
 					if( filteredOrders.Count() > 1 )
 						throw new ShipStationLabelException( "Encountered multiple orders with the same order number" );
 					order = filteredOrders.FirstOrDefault();
@@ -81,19 +85,25 @@ namespace ShipStationAccess.V2
 					try
 					{
 						if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
-							throw new ShipStationLabelException( "Has a carrier been selected in ShipStation for this order?" );
+							throw new WebException( "Has a carrier been selected in ShipStation for this order?" );
 						if( string.IsNullOrWhiteSpace( order.Confirmation ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
 							throw new ShipStationLabelException( "Has a confirmation type been selected in ShipStation for this order?" );
 						if( order.ShippingAddress == null )
 							throw new ShipStationLabelException( "Has a shipping address been selected in ShipStation for this order?" );
 						var endpoint = ShipStationShippingLabelRequest.From( order, shipDate, testLabel ).SerializeToJson();
-						label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint );
+						label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
 					}
-					catch( WebException x )
+					catch( Exception ex ) when( ex.InnerException is WebException )
 					{
-						if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-							throw new ShipStationLabelException( "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
-						throw;
+						throw new ShipStationLabelException( ex.Message );
+					}
+					catch( WebException )
+					{
+						throw new ShipStationLabelException( "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
+					}
+					catch( Exception )
+					{
+						throw new ShipStationLabelException( "Unknown error occurred" );
 					}
 				} );
 			}
@@ -189,7 +199,6 @@ namespace ShipStationAccess.V2
 				}
 			};
 
-
 			Func< string, Task > downloadOrders = async endPoint =>
 			{
 				var pagesCount = int.MaxValue;
@@ -205,22 +214,25 @@ namespace ShipStationAccess.V2
 					await ActionPolicies.GetAsync.Do( async () =>
 					{
 						ShipStationOrders ordersWithinPage = null;
-						try {
+						try
+						{
 							ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
 						}
-						catch ( WebException e )
+						catch( WebException e )
 						{
-							if ( WebRequestServices.CanSkipException( e ) )
+							if( WebRequestServices.CanSkipException( e ) )
 							{
-								ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint  );
-							} else throw;
+								ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint );
+							}
+							else
+								throw;
 						}
 
 						currentPage++;
 
-						if ( ordersWithinPage != null )
+						if( ordersWithinPage != null )
 						{
-							if ( pagesCount == int.MaxValue )
+							if( pagesCount == int.MaxValue )
 							{
 								pagesCount = ordersWithinPage.TotalPages;
 								ordersExpected = ordersWithinPage.TotalOrders;
@@ -358,12 +370,11 @@ namespace ShipStationAccess.V2
 			foreach( var order in orders )
 			{
 				var store = stores.FirstOrDefault( s => s.StoreId == order.AdvancedOptions.StoreId );
-				if ( store != null )
+				if( store != null )
 				{
 					order.MarketplaceId = store.MarketplaceId;
 					order.MarketplaceName = store.MarketplaceName;
 				}
- 					
 			}
 		}
 
@@ -374,11 +385,11 @@ namespace ShipStationAccess.V2
 			foreach( var order in orders )
 			{
 				var store = stores.FirstOrDefault( s => s.StoreId == order.AdvancedOptions.StoreId );
-				if ( store != null )
+				if( store != null )
 				{
 					order.MarketplaceId = store.MarketplaceId;
 					order.MarketplaceName = store.MarketplaceName;
-				}					
+				}
 			}
 		}
 		#endregion
