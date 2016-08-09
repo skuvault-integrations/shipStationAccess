@@ -180,7 +180,7 @@ namespace ShipStationAccess.V2.Services
 			dynamic obj = JsonConvert.DeserializeObject( responseString );
 			try
 			{
-				return $"Shipstation {ex.Message} -- {obj.ExceptionMessage.ToString().TrimEnd( '.' )} ";
+				return $"[Shipstation] {ex.Message} [Reason] {obj.ExceptionMessage.ToString().Trim().TrimEnd( '.' )} ";
 			}
 			catch( RuntimeBinderException )
 			{
