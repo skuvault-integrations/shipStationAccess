@@ -93,17 +93,11 @@ namespace ShipStationAccess.V2
 						var endpoint = ShipStationShippingLabelRequest.From( order, shipDate, testLabel ).SerializeToJson();
 						label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
 					}
-					catch( Exception ex ) when( ex.InnerException is WebException )
+					catch( Exception ex )
 					{
-						throw new ShipStationLabelException( ex.Message );
-					}
-					catch( WebException )
-					{
+						if( ex.InnerException is WebException )
+							throw new ShipStationLabelException( ex.Message );
 						throw new ShipStationLabelException( "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
-					}
-					catch( Exception )
-					{
-						throw new ShipStationLabelException( "Unknown error occurred" );
 					}
 				} );
 			}
