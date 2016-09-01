@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Models.Register;
 using ShipStationAccess.V2.Models.ShippingLabel;
 using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Models.TagList;
@@ -30,5 +31,7 @@ namespace ShipStationAccess.V2
 		Task< IEnumerable< ShipStationTag > > GetTagsAsync();
 
 		ShipStationShippingLabel CreateAndGetShippingLabel( string storeId, string orderNumber, DateTime shipDate, bool testLabel = false );
+
+		void Register( ShipStationRegister register );
 	}
 }

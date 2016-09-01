@@ -19,6 +19,7 @@ using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Models.TagList;
 using ShipStationAccess.V2.Models.WarehouseLocation;
 using ShipStationAccess.V2.Services;
+using ShipStationAccess.V2.Models.Register;
 
 namespace ShipStationAccess.V2
 {
@@ -354,6 +355,27 @@ namespace ShipStationAccess.V2
 			} );
 			return stores;
 		}
+		#endregion
+
+		#region Register
+		public void Register( ShipStationRegister register )
+		{
+			ActionPolicies.Submit.Do( () =>
+			{
+				try
+				{
+					this._webRequestServices.PostDataWithShipstationHeader( ShipStationCommand.Register, register.SerializeToJson() );
+				}
+				catch( WebException x )
+				{
+					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
+						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {register}", register );
+					else
+						throw;
+				}
+			} );
+		}
+
 		#endregion
 
 		#region Misc

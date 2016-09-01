@@ -136,6 +136,39 @@ namespace ShipStationAccess.V2.Services
 			}
 		}
 
+		public void PostDataWithShipstationHeader( ShipStationCommand command, string jsonContent )
+		{
+			var request = this.CreateServiceShipstationPostRequest( command, jsonContent );
+
+			try
+			{
+				using( var response = ( HttpWebResponse )request.GetResponse() )
+					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+			}
+			catch( WebException x )
+			{
+				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
+				throw;
+			}
+		}
+
+		public async Task PostDataWithShipstationHeaderAsync( ShipStationCommand command, string jsonContent )
+		{
+			var request = this.CreateServiceShipstationPostRequest( command, jsonContent );
+			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+
+			try
+			{
+				using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
+					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+			}
+			catch( WebException x )
+			{
+				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
+				throw;
+			}
+		}
+
 		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
 		{
 			while( true )
@@ -208,6 +241,21 @@ namespace ShipStationAccess.V2.Services
 			request.ContentType = "application/json";
 			this.CreateRequestHeaders( request );
 
+			using ( var writer = new StreamWriter( request.GetRequestStream() ) )
+				writer.Write( content );
+
+			return request;
+		}
+
+		private HttpWebRequest CreateServiceShipstationPostRequest( ShipStationCommand command, string content )
+		{
+			var uri = new Uri( string.Concat( this._credentials.Host, command.Command ) );
+			var request = ( HttpWebRequest )WebRequest.Create( uri );
+
+			request.Method = WebRequestMethods.Http.Post;
+			request.ContentType = "application/json";
+			this.CreateRequestShipstationHeaders( request );
+
 			using( var writer = new StreamWriter( request.GetRequestStream() ) )
 				writer.Write( content );
 
@@ -220,6 +268,13 @@ namespace ShipStationAccess.V2.Services
 			request.Headers.Add( "Authorization", this.CreateAuthenticationHeader() );
 			if( !string.IsNullOrEmpty( this._credentials.PartnerKey ) )
 				request.Headers.Add( "x-partner", this._credentials.PartnerKey );
+		}
+
+		private void CreateRequestShipstationHeaders( WebRequest request )
+		{
+			request.Headers.Add( "Authorization", this.CreateAuthenticationHeader() );
+			if( !string.IsNullOrEmpty( this._credentials.PartnerKey ) )
+				request.Headers.Add( "x-shipstation-partner", this._credentials.PartnerKey );
 		}
 
 		private string CreateAuthenticationHeader()

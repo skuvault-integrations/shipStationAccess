@@ -9,6 +9,7 @@
 		public static readonly ShipStationCommand UpdateOrderItemsWarehouseLocation = new ShipStationCommand( "/Orders/UpdateWarehouseLocation" );
 		public static readonly ShipStationCommand GetStores = new ShipStationCommand( "/Stores" );
 		public static readonly ShipStationCommand GetShippingLabel = new ShipStationCommand( "/Orders/CreateLabelForOrder" );
+		public static readonly ShipStationCommand Register = new ShipStationCommand( "/Integratedapp/Register" );
 		private ShipStationCommand( string command )
 		{
 			this.Command = command;
