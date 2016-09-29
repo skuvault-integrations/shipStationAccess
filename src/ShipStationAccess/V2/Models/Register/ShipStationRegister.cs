@@ -24,6 +24,11 @@ namespace ShipStationAccess.V2.Models.Register
 			this.AuthKey = authKey;
 		}
 
+		public override string ToString()
+		{
+			return string.Format( @"ApiCode: {0}. AuthToken: {1}. AuthKey: {2}", this.ApiCode, this.AuthToken, this.AuthKey );
+		}
+
 		#region Equality members
 		public bool Equals( ShipStationRegister other )
 		{

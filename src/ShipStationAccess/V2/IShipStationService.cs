@@ -32,6 +32,6 @@ namespace ShipStationAccess.V2
 
 		ShipStationShippingLabel CreateAndGetShippingLabel( string storeId, string orderNumber, DateTime shipDate, bool testLabel = false );
 
-		void Register( ShipStationRegister register );
+		ShipStationRegisterResponse Register( ShipStationRegister register );
 	}
 }

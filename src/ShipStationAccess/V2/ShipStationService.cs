@@ -358,22 +358,25 @@ namespace ShipStationAccess.V2
 		#endregion
 
 		#region Register
-		public void Register( ShipStationRegister register )
+		public ShipStationRegisterResponse Register( ShipStationRegister register )
 		{
+			ShipStationRegisterResponse response = null;
 			ActionPolicies.Submit.Do( () =>
 			{
 				try
 				{
-					this._webRequestServices.PostDataWithShipstationHeader( ShipStationCommand.Register, register.SerializeToJson() );
+					ShipStationLogger.Log.Trace( "Try send register request. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
+					response = this._webRequestServices.PostDataAndGetResponseWithShipstationHeader< ShipStationRegisterResponse >( ShipStationCommand.Register, register.SerializeToJson(), true );
+					ShipStationLogger.Log.Trace( "Try send register request is success. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
 				}
-				catch( WebException x )
+				catch( Exception ex )
 				{
-					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {register}", register );
-					else
-						throw;
+					ShipStationLogger.Log.Error( "Try send register request is fail. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
+					throw new ShipStationRegisterException( ex.Message );
 				}
 			} );
+
+			return response;
 		}
 
 		#endregion

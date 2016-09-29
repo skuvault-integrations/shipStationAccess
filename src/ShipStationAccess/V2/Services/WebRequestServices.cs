@@ -135,40 +135,7 @@ namespace ShipStationAccess.V2.Services
 				throw;
 			}
 		}
-
-		public void PostDataWithShipstationHeader( ShipStationCommand command, string jsonContent )
-		{
-			var request = this.CreateServiceShipstationPostRequest( command, jsonContent );
-
-			try
-			{
-				using( var response = ( HttpWebResponse )request.GetResponse() )
-					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
-			}
-			catch( WebException x )
-			{
-				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
-				throw;
-			}
-		}
-
-		public async Task PostDataWithShipstationHeaderAsync( ShipStationCommand command, string jsonContent )
-		{
-			var request = this.CreateServiceShipstationPostRequest( command, jsonContent );
-			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
-
-			try
-			{
-				using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
-					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
-			}
-			catch( WebException x )
-			{
-				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
-				throw;
-			}
-		}
-
+		
 		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
 		{
 			while( true )
@@ -206,6 +173,49 @@ namespace ShipStationAccess.V2.Services
 
 				this.CreateDelay( resetDelay ).Wait();
 			}
+		}
+
+		public T PostDataAndGetResponseWithShipstationHeader< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
+		{
+			int numberRequest = 0;
+			while( numberRequest < 20 )
+			{
+				numberRequest++;
+				var request = this.CreateServiceShipstationPostRequest( command, jsonContent );
+				this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				var resetDelay = 0;
+				try
+				{
+					using( var response = request.GetResponse() )
+					{
+						var shipStationResponse = this.ProcessResponse( response );
+						if( !shipStationResponse.IsThrottled )
+							return this.ParseResponse< T >( shipStationResponse.Data );
+						resetDelay = shipStationResponse.ResetInSeconds;
+					}
+				}
+				catch( WebException ex )
+				{
+					var responseString = ex.Response.GetResponseString();
+					this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, ex.Response.GetHttpStatusCode(), jsonContent, responseString );
+					var response = ex.Response;
+					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
+					switch( statusCode )
+					{
+						case 429:
+							resetDelay = GetLimitReset( response );
+							break;
+						default:
+							if( shouldGetExceptionMessage )
+								throw new Exception( this.GetExceptionMessageFromResponse( ex, responseString ), ex );
+							throw;
+					}
+				}
+
+				this.CreateDelay( resetDelay ).Wait();
+			}
+
+			throw new Exception( "More 20 attempts" );
 		}
 
 		private string GetExceptionMessageFromResponse( WebException ex, string responseString )
