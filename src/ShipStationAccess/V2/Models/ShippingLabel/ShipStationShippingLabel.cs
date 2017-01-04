@@ -1,10 +1,69 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using ShipStationAccess.V2.Models.Order;
 
 namespace ShipStationAccess.V2.Models.ShippingLabel
 {
+	public sealed class ShipStationShippingLabelResult
+	{
+		public ShipStationShippingLabel Label{ get; set; }
+
+		public List< ShipStationShippingLabelProblem > Problems{ get; internal set; }
+
+		public ShipStationShippingLabelResult()
+		{
+			this.Problems = new List< ShipStationShippingLabelProblem >();
+		}
+
+		public void AddProblem( string orderId, string error, ShipStationShippingLabelProblemEnum type )
+		{
+			this.Problems.Add( new ShipStationShippingLabelProblem( orderId, error, type ) );
+		}
+
+		public void AddServerProblem( string orderId, string error )
+		{
+			this.Problems.Add( new ShipStationShippingLabelProblem( orderId, error, ShipStationShippingLabelProblemEnum.ServerError ) );
+		}
+
+		public bool HasProblems()
+		{
+			return this.Problems.Any();
+		}
+
+		public bool HasServerProblems()
+		{
+			return this.Problems.Any( w => w.Type == ShipStationShippingLabelProblemEnum.ServerError );
+		}
+
+		public IEnumerable< string > GetServerProblemErrors()
+		{
+			return this.Problems.Where( w => w.Type == ShipStationShippingLabelProblemEnum.ServerError ).Select( s => s.Error );
+		}
+	}
+
+	public enum ShipStationShippingLabelProblemEnum
+	{
+		Undefined = 0,
+		MultipleOrders = 1,
+		ServerError = 2
+	}
+
+	public sealed class ShipStationShippingLabelProblem
+	{
+		public string OrderId{ get; set; }
+		public string Error{ get; set; }
+		public ShipStationShippingLabelProblemEnum Type{ get; set; }
+
+		public ShipStationShippingLabelProblem( string orderId, string error, ShipStationShippingLabelProblemEnum type )
+		{
+			this.OrderId = orderId;
+			this.Type = type;
+			this.Error = error;
+		}
+	}
+
 	[ DataContract ]
 	public sealed class ShipStationShippingLabel
 	{
@@ -51,6 +110,7 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 
 		[ DataMember( Name = "serviceCode" ) ]
 		public string ServiceCode{ get; set; }
+
 		[ DataMember( Name = "packageCode" ) ]
 		public string PackageCode{ get; set; }
 

@@ -56,10 +56,10 @@ namespace ShipStationAccess.V2
 			return tags;
 		}
 
-		public ShipStationShippingLabel CreateAndGetShippingLabel( string storeId, string orderNumber, DateTime shipDate, bool testLabel = false )
+		public ShipStationShippingLabelResult CreateAndGetShippingLabel( string storeId, string orderNumber, DateTime shipDate, bool testLabel = false )
 		{
 			//return ShipStationShippingLabel.GetMockShippingLabel();
-			ShipStationShippingLabel label = null;
+			var shippingLabelResult = new ShipStationShippingLabelResult();
 			ShipStationOrder order = null;
 			ActionPolicies.Get.Do( () =>
 			{
@@ -68,7 +68,12 @@ namespace ShipStationAccess.V2
 					var orders = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ParamsBuilder.CreateStoreIdOrderNumberParams( storeId, orderNumber ) );
 					var filteredOrders = orders.Orders.Where( s => s.OrderStatus != ShipStationOrderStatusEnum.cancelled ).ToList();
 					if( filteredOrders.Count() > 1 )
-						throw new ShipStationLabelException( "Encountered multiple orders with the same order number" );
+					{
+						foreach( var filteredOrder in filteredOrders )
+						{
+							shippingLabelResult.AddProblem( filteredOrder.OrderNumber, "Encountered multiple orders with the same order number", ShipStationShippingLabelProblemEnum.MultipleOrders );
+						}
+					}
 					order = filteredOrders.FirstOrDefault();
 				}
 				catch( WebException x )
@@ -79,32 +84,41 @@ namespace ShipStationAccess.V2
 						throw;
 				}
 			} );
+
+			if( shippingLabelResult.HasProblems() )
+				return shippingLabelResult;
+
 			if( order != null )
 			{
-				ActionPolicies.Submit.Do( () =>
+				try
 				{
-					try
+					if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
+						throw new ShipStationLabelException( "Has a carrier been selected in ShipStation for this order?" );
+					if( string.IsNullOrWhiteSpace( order.Confirmation ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
+						throw new ShipStationLabelException( "Has a confirmation type been selected in ShipStation for this order?" );
+					if( order.ShippingAddress == null )
+						throw new ShipStationLabelException( "Has a shipping address been selected in ShipStation for this order?" );
+					var endpoint = ShipStationShippingLabelRequest.From( order, shipDate, testLabel ).SerializeToJson();
+					shippingLabelResult.Label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
+				}
+
+				catch( ShipStationLabelException ex )
+				{
+					shippingLabelResult.AddServerProblem( order.OrderNumber, ex.Message );
+				}
+				catch( Exception ex )
+				{
+					if( ex.InnerException is WebException )
 					{
-						if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
-							throw new WebException( "Has a carrier been selected in ShipStation for this order?" );
-						if( string.IsNullOrWhiteSpace( order.Confirmation ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
-							throw new ShipStationLabelException( "Has a confirmation type been selected in ShipStation for this order?" );
-						if( order.ShippingAddress == null )
-							throw new ShipStationLabelException( "Has a shipping address been selected in ShipStation for this order?" );
-						var endpoint = ShipStationShippingLabelRequest.From( order, shipDate, testLabel ).SerializeToJson();
-						label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
+						shippingLabelResult.AddServerProblem( order.OrderNumber, ex.Message );
+						return shippingLabelResult;
 					}
-					catch( Exception ex )
-					{
-						if( ex.InnerException is WebException )
-							throw new ShipStationLabelException( ex.Message );
-						throw new ShipStationLabelException( "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
-					}
-				} );
+					shippingLabelResult.AddServerProblem( order.OrderNumber, "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
+				}
 			}
 			else
 				ShipStationLogger.Log.Trace( "Error creating label. Order not found. StoreId: {storeId}, OrderNumber: {orderNumber}", storeId, orderNumber );
-			return label;
+			return shippingLabelResult;
 		}
 
 		#region Get Orders
