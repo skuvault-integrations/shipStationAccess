@@ -56,69 +56,28 @@ namespace ShipStationAccess.V2
 			return tags;
 		}
 
-		public ShipStationShippingLabelResult CreateAndGetShippingLabel( string storeId, string orderNumber, DateTime shipDate, bool testLabel = false )
+		public ShipStationShippingLabel CreateAndGetShippingLabel( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, bool isTestLabel = false )
 		{
 			//return ShipStationShippingLabel.GetMockShippingLabel();
-			var shippingLabelResult = new ShipStationShippingLabelResult();
-			ShipStationOrder order = null;
-			ActionPolicies.Get.Do( () =>
+			return ActionPolicies.Submit.Get( () =>
 			{
 				try
 				{
-					var orders = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ParamsBuilder.CreateStoreIdOrderNumberParams( storeId, orderNumber ) );
-					var filteredOrders = orders.Orders.Where( s => s.OrderStatus != ShipStationOrderStatusEnum.cancelled ).ToList();
-					if( filteredOrders.Count() > 1 )
-					{
-						foreach( var filteredOrder in filteredOrders )
-						{
-							shippingLabelResult.AddProblem( filteredOrder.OrderNumber, "Encountered multiple orders with the same order number", ShipStationShippingLabelProblemEnum.MultipleOrders );
-						}
-					}
-					order = filteredOrders.FirstOrDefault();
-				}
-				catch( WebException x )
-				{
-					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-						ShipStationLogger.Log.Error( x, "Error creating label. Encountered 500 Internal Error. StoreId: {storeId}, OrderNumber: {orderNumber}", storeId, orderNumber );
-					else
-						throw;
-				}
-			} );
-
-			if( shippingLabelResult.HasProblems() )
-				return shippingLabelResult;
-
-			if( order != null )
-			{
-				try
-				{
-					if( string.IsNullOrWhiteSpace( order.CarrierCode ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
+					if( string.IsNullOrWhiteSpace( carrierCode ) || string.IsNullOrWhiteSpace( serviceCode ) )
 						throw new ShipStationLabelException( "Has a carrier been selected in ShipStation for this order?" );
-					if( string.IsNullOrWhiteSpace( order.Confirmation ) || string.IsNullOrWhiteSpace( order.ServiceCode ) )
+					if( string.IsNullOrWhiteSpace( confirmation ) )
 						throw new ShipStationLabelException( "Has a confirmation type been selected in ShipStation for this order?" );
-					if( order.ShippingAddress == null )
-						throw new ShipStationLabelException( "Has a shipping address been selected in ShipStation for this order?" );
-					var endpoint = ShipStationShippingLabelRequest.From( order, shipDate, testLabel ).SerializeToJson();
-					shippingLabelResult.Label = this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
-				}
+					var endpoint = ShipStationShippingLabelRequest.From( shipStationOrderId, carrierCode, serviceCode, packageCode, confirmation, shipDate, isTestLabel ).SerializeToJson();
+					return this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
 
-				catch( ShipStationLabelException ex )
-				{
-					shippingLabelResult.AddServerProblem( order.OrderNumber, ex.Message );
 				}
 				catch( Exception ex )
 				{
 					if( ex.InnerException is WebException )
-					{
-						shippingLabelResult.AddServerProblem( order.OrderNumber, ex.Message );
-						return shippingLabelResult;
-					}
-					shippingLabelResult.AddServerProblem( order.OrderNumber, "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
+						throw new ShipStationLabelException( ex.Message );
+					throw new ShipStationLabelException( "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
 				}
-			}
-			else
-				ShipStationLogger.Log.Trace( "Error creating label. Order not found. StoreId: {storeId}, OrderNumber: {orderNumber}", storeId, orderNumber );
-			return shippingLabelResult;
+			} );
 		}
 
 		#region Get Orders
@@ -265,6 +224,58 @@ namespace ShipStationAccess.V2
 
 			await this.FindMarketplaceIdsAsync( orders );
 
+			return orders;
+		}
+		
+		public IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber )
+		{
+			var orders = new List< ShipStationOrder >();
+			var processedOrderIds = new HashSet< long >();
+			Action< ShipStationOrders > processOrders = sorders =>
+			{
+				foreach( var order in sorders.Orders )
+				{
+					var curOrder = order;
+					if( processedOrderIds.Contains( curOrder.OrderId ) )
+						continue;
+
+					orders.Add( curOrder );
+					processedOrderIds.Add( curOrder.OrderId );
+				}
+			};
+
+			Action< string > downloadOrders = endPoint =>
+			{
+				var pagesCount = int.MaxValue;
+				var currentPage = 1;
+				var ordersCount = 0;
+				var ordersExpected = -1;
+
+				do
+				{
+					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+					var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
+
+					ActionPolicies.Get.Do( () =>
+					{
+						var ordersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
+						if( pagesCount == int.MaxValue )
+						{
+							pagesCount = ordersWithinPage.TotalPages;
+							ordersExpected = ordersWithinPage.TotalOrders;
+						}
+						currentPage++;
+						ordersCount += ordersWithinPage.Orders.Count;
+
+						processOrders( ordersWithinPage );
+					} );
+				} while( currentPage <= pagesCount );
+
+				ShipStationLogger.Log.Trace( "SS Labels Get Orders '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", this._webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+			};
+
+			var newOrdersEndpoint = ParamsBuilder.CreateStoreIdOrderNumberParams( storeId, orderNumber );
+			downloadOrders( newOrdersEndpoint );
 			return orders;
 		}
 		#endregion

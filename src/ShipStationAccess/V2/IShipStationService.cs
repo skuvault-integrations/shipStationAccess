@@ -14,7 +14,8 @@ namespace ShipStationAccess.V2
 	{
 		IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, ShipStationOrder > processOrder = null );
 		Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null );
-
+		IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber );
+		
 		void UpdateOrder( ShipStationOrder order );
 		Task UpdateOrderAsync( ShipStationOrder order );
 
@@ -30,7 +31,7 @@ namespace ShipStationAccess.V2
 		IEnumerable< ShipStationTag > GetTags();
 		Task< IEnumerable< ShipStationTag > > GetTagsAsync();
 
-		ShipStationShippingLabelResult CreateAndGetShippingLabel( string storeId, string orderNumber, DateTime shipDate, bool testLabel = false );
+		ShipStationShippingLabel CreateAndGetShippingLabel( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, bool isTestLabel = false );
 
 		ShipStationRegisterResponse Register( ShipStationRegister register );
 	}

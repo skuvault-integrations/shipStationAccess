@@ -17,14 +17,14 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 			this.Problems = new List< ShipStationShippingLabelProblem >();
 		}
 
-		public void AddProblem( string orderId, string error, ShipStationShippingLabelProblemEnum type )
+		public void AddProblem( string error, ShipStationShippingLabelProblemEnum type )
 		{
-			this.Problems.Add( new ShipStationShippingLabelProblem( orderId, error, type ) );
+			this.Problems.Add( new ShipStationShippingLabelProblem( error, type ) );
 		}
 
-		public void AddServerProblem( string orderId, string error )
+		public void AddServerProblem( string error )
 		{
-			this.Problems.Add( new ShipStationShippingLabelProblem( orderId, error, ShipStationShippingLabelProblemEnum.ServerError ) );
+			this.Problems.Add( new ShipStationShippingLabelProblem( error, ShipStationShippingLabelProblemEnum.ServerError ) );
 		}
 
 		public bool HasProblems()
@@ -32,14 +32,9 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 			return this.Problems.Any();
 		}
 
-		public bool HasServerProblems()
+		public IEnumerable< string > GetErrors()
 		{
-			return this.Problems.Any( w => w.Type == ShipStationShippingLabelProblemEnum.ServerError );
-		}
-
-		public IEnumerable< string > GetServerProblemErrors()
-		{
-			return this.Problems.Where( w => w.Type == ShipStationShippingLabelProblemEnum.ServerError ).Select( s => s.Error );
+			return this.Problems.Select( s => s.Type + ":" + s.Error );
 		}
 	}
 
@@ -47,18 +42,17 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 	{
 		Undefined = 0,
 		MultipleOrders = 1,
-		ServerError = 2
+		ServerError = 2,
+		OrderHasInvalidShippingInfo = 3
 	}
 
 	public sealed class ShipStationShippingLabelProblem
 	{
-		public string OrderId{ get; set; }
 		public string Error{ get; set; }
 		public ShipStationShippingLabelProblemEnum Type{ get; set; }
 
-		public ShipStationShippingLabelProblem( string orderId, string error, ShipStationShippingLabelProblemEnum type )
+		public ShipStationShippingLabelProblem( string error, ShipStationShippingLabelProblemEnum type )
 		{
-			this.OrderId = orderId;
 			this.Type = type;
 			this.Error = error;
 		}
@@ -123,17 +117,17 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 		[ DataMember( Name = "testLabel" ) ]
 		public bool TestLabel{ get; set; }
 
-		public static ShipStationShippingLabelRequest From( ShipStationOrder shipStationOrder, DateTime shipDate, bool isTest )
+		public static ShipStationShippingLabelRequest From( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, bool isTestLabel )
 		{
 			return new ShipStationShippingLabelRequest()
 			{
-				OrderId = shipStationOrder.OrderId.ToString(),
-				CarrierCode = shipStationOrder.CarrierCode,
-				ServiceCode = shipStationOrder.ServiceCode,
-				PackageCode = shipStationOrder.PackageCode,
-				Confirmation = shipStationOrder.Confirmation,
+				OrderId = shipStationOrderId,
+				CarrierCode = carrierCode,
+				ServiceCode = serviceCode,
+				PackageCode = packageCode,
+				Confirmation = confirmation,
 				ShipDate = shipDate.ToString( "yyyy-MM-dd" ),
-				TestLabel = isTest
+				TestLabel = isTestLabel
 			};
 		}
 	}
