@@ -61,6 +61,8 @@ namespace ShipStationAccess.V2.Models.WarehouseLocation
 				for( var i = 0; i < 999999; i++ )
 				{
 					var pagedItems = warehouseLocation.Value.GetPage( i, 100 ).ToList();
+					if( pagedItems.Count == 0 )
+						break;
 					result.Add( new ShipStationWarehouseLocation { WarehouseLocation = warehouseLocation.Key, OrderItemIds = pagedItems } );
 					if( pagedItems.Count < 100 )
 						break;
