@@ -56,10 +56,10 @@ namespace ShipStationAccess.V2
 			return tags;
 		}
 
-		public ShipStationShippingLabel CreateAndGetShippingLabel( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, bool isTestLabel = false )
+		public async Task < ShipStationShippingLabel > CreateAndGetShippingLabelAsync( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, bool isTestLabel = false )
 		{
 			//return ShipStationShippingLabel.GetMockShippingLabel();
-			return ActionPolicies.Submit.Get( () =>
+			return await ActionPolicies.GetAsync.Get( async () =>
 			{
 				try
 				{
@@ -68,7 +68,7 @@ namespace ShipStationAccess.V2
 					if( string.IsNullOrWhiteSpace( confirmation ) )
 						throw new ShipStationLabelException( "Has a confirmation type been selected in ShipStation for this order?" );
 					var endpoint = ShipStationShippingLabelRequest.From( shipStationOrderId, carrierCode, serviceCode, packageCode, confirmation, shipDate, isTestLabel ).SerializeToJson();
-					return this._webRequestServices.PostDataAndGetResponse< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
+					return await this._webRequestServices.PostDataAndGetResponseAsync< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
 
 				}
 				catch( Exception ex )

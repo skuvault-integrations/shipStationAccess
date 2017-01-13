@@ -175,6 +175,45 @@ namespace ShipStationAccess.V2.Services
 			}
 		}
 
+		public async Task< T > PostDataAndGetResponseAsync< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
+		{
+			while( true )
+			{
+				var request = this.CreateServicePostRequest( command, jsonContent );
+				this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				var resetDelay = 0;
+				try
+				{
+					using( var response = await request.GetResponseAsync() )
+					{
+						var shipStationResponse = this.ProcessResponse( response );
+						if( !shipStationResponse.IsThrottled )
+							return this.ParseResponse< T >( shipStationResponse.Data );
+						resetDelay = shipStationResponse.ResetInSeconds;
+					}
+				}
+				catch( WebException ex )
+				{
+					var responseString = ex.Response.GetResponseString();
+					this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, ex.Response.GetHttpStatusCode(), jsonContent, responseString );
+					var response = ex.Response;
+					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
+					switch( statusCode )
+					{
+						case 429:
+							resetDelay = GetLimitReset( response );
+							break;
+						default:
+							if( shouldGetExceptionMessage )
+								throw new Exception( this.GetExceptionMessageFromResponse( ex, responseString ), ex );
+							throw;
+					}
+				}
+
+				this.CreateDelay( resetDelay ).Wait();
+			}
+		}
+
 		public T PostDataAndGetResponseWithShipstationHeader< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
 		{
 			int numberRequest = 0;
