@@ -15,6 +15,9 @@ namespace ShipStationAccess.V2
 		IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, ShipStationOrder > processOrder = null );
 		Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null );
 		IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber );
+
+		ShipStationOrder GetOrderById( string orderId );
+		Task< ShipStationOrder > GetOrderByIdAsync( string orderId );
 		
 		void UpdateOrder( ShipStationOrder order );
 		Task UpdateOrderAsync( ShipStationOrder order );

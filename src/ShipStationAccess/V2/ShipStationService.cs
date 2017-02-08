@@ -278,6 +278,28 @@ namespace ShipStationAccess.V2
 			downloadOrders( newOrdersEndpoint );
 			return orders;
 		}
+
+		public ShipStationOrder GetOrderById( string orderId )
+		{
+			ShipStationOrder order = null;
+			ActionPolicies.Get.Do( () =>
+			{
+				order = this._webRequestServices.GetResponse< ShipStationOrder >( ShipStationCommand.GetOrder, "/" + orderId );
+			} );
+
+			return order;
+		}
+
+		public async Task< ShipStationOrder > GetOrderByIdAsync( string orderId )
+		{
+			ShipStationOrder order = null;
+			await ActionPolicies.GetAsync.Do( async () =>
+			{
+				order = await this._webRequestServices.GetResponseAsync< ShipStationOrder >( ShipStationCommand.GetOrder, "/" + orderId );
+			} );
+
+			return order;
+		}
 		#endregion
 
 		#region Update Orders
