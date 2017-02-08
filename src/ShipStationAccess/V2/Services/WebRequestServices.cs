@@ -55,6 +55,10 @@ namespace ShipStationAccess.V2.Services
 					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
 					switch( statusCode )
 					{
+						case 404:
+							if( command == ShipStationCommand.GetOrder )
+								return default(T);
+							throw;
 						case 429:
 							resetDelay = GetLimitReset( response );
 							break;
@@ -90,6 +94,10 @@ namespace ShipStationAccess.V2.Services
 					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
 					switch( statusCode )
 					{
+						case 404:
+							if( command == ShipStationCommand.GetOrder )
+								return default(T);
+							throw;
 						case 429:
 							resetDelay = GetLimitReset( response );
 							break;
