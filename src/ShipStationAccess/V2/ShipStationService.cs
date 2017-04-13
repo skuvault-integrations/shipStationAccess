@@ -179,38 +179,38 @@ namespace ShipStationAccess.V2
 					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
 					var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
 
-					await ActionPolicies.GetAsync.Do( async () =>
+					ShipStationOrders ordersWithinPage = null;
+					try
 					{
-						ShipStationOrders ordersWithinPage = null;
-						try
+						await ActionPolicies.GetAsync.Do( async () =>
 						{
 							ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
-						}
-						catch( WebException e )
+						} );
+					}
+					catch( WebException e )
+					{
+						if( WebRequestServices.CanSkipException( e ) )
 						{
-							if( WebRequestServices.CanSkipException( e ) )
-							{
-								ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint );
-							}
-							else
-								throw;
+							ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint );
 						}
+						else
+							throw;
+					}
 
-						currentPage++;
+					currentPage++;
 
-						if( ordersWithinPage != null )
+					if( ordersWithinPage != null )
+					{
+						if( pagesCount == int.MaxValue )
 						{
-							if( pagesCount == int.MaxValue )
-							{
-								pagesCount = ordersWithinPage.TotalPages;
-								ordersExpected = ordersWithinPage.TotalOrders;
-							}
-
-							ordersCount += ordersWithinPage.Orders.Count;
-
-							await processOrders( ordersWithinPage );
+							pagesCount = ordersWithinPage.TotalPages;
+							ordersExpected = ordersWithinPage.TotalOrders;
 						}
-					} );
+
+						ordersCount += ordersWithinPage.Orders.Count;
+
+						await processOrders( ordersWithinPage );
+					}
 				} while( currentPage <= pagesCount );
 
 				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
