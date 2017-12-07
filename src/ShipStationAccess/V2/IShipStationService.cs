@@ -34,7 +34,7 @@ namespace ShipStationAccess.V2
 		IEnumerable< ShipStationTag > GetTags();
 		Task< IEnumerable< ShipStationTag > > GetTagsAsync();
 
-		Task < ShipStationShippingLabel > CreateAndGetShippingLabelAsync( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, bool isTestLabel = false );
+		Task < ShipStationShippingLabel > CreateAndGetShippingLabelAsync( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, string weight, string weightUnit, bool isTestLabel = false );
 
 		ShipStationRegisterResponse Register( ShipStationRegister register );
 	}

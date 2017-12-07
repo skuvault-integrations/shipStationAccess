@@ -58,6 +58,20 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 		}
 	}
 
+	public sealed class WeightModel
+	{
+		[ DataMember( Name = "value" ) ]
+		public string Value{ get; set; }
+		[ DataMember( Name = "units" ) ]
+		public string Units{ get; set; }
+
+		public WeightModel( string value, string units )
+		{
+			this.Value = value;
+			this.Units = units;
+		}
+	}
+
 	[ DataContract ]
 	public sealed class ShipStationShippingLabel
 	{
@@ -114,10 +128,13 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 		[ DataMember( Name = "shipDate" ) ]
 		public string ShipDate{ get; set; }
 
+		[ DataMember( Name = "weight" ) ]
+		public WeightModel Weight{ get; set; }
+
 		[ DataMember( Name = "testLabel" ) ]
 		public bool TestLabel{ get; set; }
 
-		public static ShipStationShippingLabelRequest From( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, bool isTestLabel )
+		public static ShipStationShippingLabelRequest From( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, string weight, string weightUnit, bool isTestLabel )
 		{
 			return new ShipStationShippingLabelRequest()
 			{
@@ -127,6 +144,7 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 				PackageCode = packageCode,
 				Confirmation = confirmation,
 				ShipDate = shipDate.ToString( "yyyy-MM-dd" ),
+				Weight = new WeightModel( weight, weightUnit ),
 				TestLabel = isTestLabel
 			};
 		}
