@@ -136,7 +136,7 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 
 		public static ShipStationShippingLabelRequest From( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, string weight, string weightUnit, bool isTestLabel )
 		{
-			return new ShipStationShippingLabelRequest()
+			var shippingLabelRequest = new ShipStationShippingLabelRequest()
 			{
 				OrderId = shipStationOrderId,
 				CarrierCode = carrierCode,
@@ -144,9 +144,12 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 				PackageCode = packageCode,
 				Confirmation = confirmation,
 				ShipDate = shipDate.ToString( "yyyy-MM-dd" ),
-				Weight = new WeightModel( weight, weightUnit ),
 				TestLabel = isTestLabel
 			};
+
+			if( weight != null && weightUnit != null )
+				shippingLabelRequest.Weight = new WeightModel( weight, weightUnit );
+			return shippingLabelRequest;
 		}
 	}
 }
