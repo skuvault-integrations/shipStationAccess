@@ -83,7 +83,7 @@ namespace ShipStationAccessTests.Orders
 
 			if( order == null )
 				Assert.Fail( "No order found to update" );
-			var label = service.CreateAndGetShippingLabel( order.AdvancedOptions.StoreId.ToString(), order.OrderNumber, DateTime.UtcNow );
+			var label = service.CreateAndGetShippingLabelAsync( order.AdvancedOptions.StoreId.ToString(), order.CarrierCode, order.ServiceCode, order.PackageCode, order.Confirmation, DateTime.UtcNow, null, null );
 			label.Should().NotBeNull();
 		}
 
