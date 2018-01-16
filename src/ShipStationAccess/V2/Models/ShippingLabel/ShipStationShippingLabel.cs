@@ -66,7 +66,7 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 		[ DataMember( Name = "testLabel" ) ]
 		public bool TestLabel{ get; set; }
 
-		public static ShipStationShippingLabelRequest From( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, decimal weight, string weightUnit, bool isTestLabel )
+		public static ShipStationShippingLabelRequest From( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, decimal? weight, string weightUnit, bool isTestLabel )
 		{
 			var shippingLabelRequest = new ShipStationShippingLabelRequest()
 			{
@@ -79,8 +79,8 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 				TestLabel = isTestLabel
 			};
 
-			if( weight != 0m && weightUnit != null )
-				shippingLabelRequest.Weight = new ShipStationItemWeight( weight, weightUnit );
+			if( weight.HasValue && weightUnit != null )
+				shippingLabelRequest.Weight = new ShipStationItemWeight( weight.Value, weightUnit );
 			return shippingLabelRequest;
 		}
 	}
