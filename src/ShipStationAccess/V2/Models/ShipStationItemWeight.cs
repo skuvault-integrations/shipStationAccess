@@ -10,5 +10,10 @@ namespace ShipStationAccess.V2.Models
 
 		[ DataMember( Name = "units" ) ]
 		public string Units{ get; set; }
+		public ShipStationItemWeight( decimal value, string units )
+		{
+			this.Value = value;
+			this.Units = units;
+		}
 	}
 }

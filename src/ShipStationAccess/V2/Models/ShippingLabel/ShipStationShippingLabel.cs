@@ -1,76 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using ShipStationAccess.V2.Models.Order;
 
 namespace ShipStationAccess.V2.Models.ShippingLabel
 {
-	public sealed class ShipStationShippingLabelResult
-	{
-		public ShipStationShippingLabel Label{ get; set; }
-
-		public List< ShipStationShippingLabelProblem > Problems{ get; internal set; }
-
-		public ShipStationShippingLabelResult()
-		{
-			this.Problems = new List< ShipStationShippingLabelProblem >();
-		}
-
-		public void AddProblem( string error, ShipStationShippingLabelProblemEnum type )
-		{
-			this.Problems.Add( new ShipStationShippingLabelProblem( error, type ) );
-		}
-
-		public void AddServerProblem( string error )
-		{
-			this.Problems.Add( new ShipStationShippingLabelProblem( error, ShipStationShippingLabelProblemEnum.ServerError ) );
-		}
-
-		public bool HasProblems()
-		{
-			return this.Problems.Any();
-		}
-
-		public IEnumerable< string > GetErrors()
-		{
-			return this.Problems.Select( s => s.Type + ":" + s.Error );
-		}
-	}
-
-	public enum ShipStationShippingLabelProblemEnum
-	{
-		Undefined = 0,
-		MultipleOrders = 1,
-		ServerError = 2,
-		OrderHasInvalidShippingInfo = 3
-	}
-
-	public sealed class ShipStationShippingLabelProblem
-	{
-		public string Error{ get; set; }
-		public ShipStationShippingLabelProblemEnum Type{ get; set; }
-
-		public ShipStationShippingLabelProblem( string error, ShipStationShippingLabelProblemEnum type )
-		{
-			this.Type = type;
-			this.Error = error;
-		}
-	}
-
-	public sealed class WeightModel
-	{
-		[ DataMember( Name = "value" ) ]
-		public string Value{ get; set; }
-		[ DataMember( Name = "units" ) ]
-		public string Units{ get; set; }
-
-		public WeightModel( string value, string units )
-		{
-			this.Value = value;
-			this.Units = units;
-		}
-	}
 
 	[ DataContract ]
 	public sealed class ShipStationShippingLabel
@@ -129,12 +61,12 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 		public string ShipDate{ get; set; }
 
 		[ DataMember( Name = "weight" ) ]
-		public WeightModel Weight{ get; set; }
+		public ShipStationItemWeight Weight{ get; set; }
 
 		[ DataMember( Name = "testLabel" ) ]
 		public bool TestLabel{ get; set; }
 
-		public static ShipStationShippingLabelRequest From( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, string weight, string weightUnit, bool isTestLabel )
+		public static ShipStationShippingLabelRequest From( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, decimal weight, string weightUnit, bool isTestLabel )
 		{
 			var shippingLabelRequest = new ShipStationShippingLabelRequest()
 			{
@@ -147,8 +79,8 @@ namespace ShipStationAccess.V2.Models.ShippingLabel
 				TestLabel = isTestLabel
 			};
 
-			if( weight != null && weightUnit != null )
-				shippingLabelRequest.Weight = new WeightModel( weight, weightUnit );
+			if( weight != 0m && weightUnit != null )
+				shippingLabelRequest.Weight = new ShipStationItemWeight( weight, weightUnit );
 			return shippingLabelRequest;
 		}
 	}
