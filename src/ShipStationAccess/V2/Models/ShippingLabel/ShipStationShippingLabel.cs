@@ -1,63 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using ShipStationAccess.V2.Models.Order;
 
 namespace ShipStationAccess.V2.Models.ShippingLabel
 {
-	public sealed class ShipStationShippingLabelResult
-	{
-		public ShipStationShippingLabel Label{ get; set; }
-
-		public List< ShipStationShippingLabelProblem > Problems{ get; internal set; }
-
-		public ShipStationShippingLabelResult()
-		{
-			this.Problems = new List< ShipStationShippingLabelProblem >();
-		}
-
-		public void AddProblem( string error, ShipStationShippingLabelProblemEnum type )
-		{
-			this.Problems.Add( new ShipStationShippingLabelProblem( error, type ) );
-		}
-
-		public void AddServerProblem( string error )
-		{
-			this.Problems.Add( new ShipStationShippingLabelProblem( error, ShipStationShippingLabelProblemEnum.ServerError ) );
-		}
-
-		public bool HasProblems()
-		{
-			return this.Problems.Any();
-		}
-
-		public IEnumerable< string > GetErrors()
-		{
-			return this.Problems.Select( s => s.Type + ":" + s.Error );
-		}
-	}
-
-	public enum ShipStationShippingLabelProblemEnum
-	{
-		Undefined = 0,
-		MultipleOrders = 1,
-		ServerError = 2,
-		OrderHasInvalidShippingInfo = 3
-	}
-
-	public sealed class ShipStationShippingLabelProblem
-	{
-		public string Error{ get; set; }
-		public ShipStationShippingLabelProblemEnum Type{ get; set; }
-
-		public ShipStationShippingLabelProblem( string error, ShipStationShippingLabelProblemEnum type )
-		{
-			this.Type = type;
-			this.Error = error;
-		}
-	}
-
 	public sealed class WeightModel
 	{
 		[ DataMember( Name = "value" ) ]
