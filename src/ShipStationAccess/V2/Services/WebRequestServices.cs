@@ -110,40 +110,120 @@ namespace ShipStationAccess.V2.Services
 			}
 		}
 
+		//		public void PostData( ShipStationCommand command, string jsonContent )
+		//		{
+		//			var request = this.CreateServicePostRequest( command, jsonContent );
+		////			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+
+		//			try
+		//			{
+		//				using( var response = ( HttpWebResponse )request.GetResponse() )
+		//					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+		//			}
+		//			catch( WebException x )
+		//			{
+		//				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
+		//				throw;
+		//			}
+		//		}
+
+		//		public async Task PostDataAsync( ShipStationCommand command, string jsonContent )
+		//		{
+		//			var request = this.CreateServicePostRequest( command, jsonContent );
+		//			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+
+		//			try
+		//			{
+		//				using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
+		//					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+		//			}
+		//			catch( WebException x )
+		//			{
+		//				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
+		//				throw;
+		//			}
+		//		}
+
 		public void PostData( ShipStationCommand command, string jsonContent )
 		{
-			var request = this.CreateServicePostRequest( command, jsonContent );
-//			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+			while( true )
+			{
+				var request = this.CreateServicePostRequest( command, jsonContent );
+				this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				var resetDelay = 0;
+				try
+				{
+					using( var response = ( HttpWebResponse )request.GetResponse() )
+					{
+						var shipStationResponse = this.ProcessResponse( response );
+						if( !shipStationResponse.IsThrottled )
+						{
+							this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+							break;
+						}
+						resetDelay = shipStationResponse.ResetInSeconds;
+					}
+				}
+				catch( WebException ex )
+				{
+					var responseString = ex.Response.GetResponseString();
+					this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, ex.Response.GetHttpStatusCode(), jsonContent, responseString );
+					var response = ex.Response;
+					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
+					switch( statusCode )
+					{
+						case 429:
+							resetDelay = GetLimitReset( response );
+							break;
+						default:
+							throw;
+					}
+				}
 
-			try
-			{
-				using( var response = ( HttpWebResponse )request.GetResponse() )
-					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
-			}
-			catch( WebException x )
-			{
-				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
-				throw;
+				this.CreateDelay( resetDelay ).Wait();
 			}
 		}
 
 		public async Task PostDataAsync( ShipStationCommand command, string jsonContent )
 		{
-			var request = this.CreateServicePostRequest( command, jsonContent );
-			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+			while( true )
+			{
+				var request = this.CreateServicePostRequest( command, jsonContent );
+				this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
+				var resetDelay = 0;
+				try
+				{
+					using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
+					{
+						var shipStationResponse = this.ProcessResponse( response );
+						if( !shipStationResponse.IsThrottled )
+						{
+							this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+							break;
+						}
+						resetDelay = shipStationResponse.ResetInSeconds;
+					}
+				}
+				catch( WebException ex )
+				{
+					var responseString = ex.Response.GetResponseString();
+					this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, ex.Response.GetHttpStatusCode(), jsonContent, responseString );
+					var response = ex.Response;
+					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
+					switch( statusCode )
+					{
+						case 429:
+							resetDelay = GetLimitReset( response );
+							break;
+						default:
+							throw;
+					}
+				}
 
-			try
-			{
-				using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
-					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
-			}
-			catch( WebException x )
-			{
-				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
-				throw;
+				await this.CreateDelay( resetDelay );
 			}
 		}
-		
+
 		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
 		{
 			while( true )
