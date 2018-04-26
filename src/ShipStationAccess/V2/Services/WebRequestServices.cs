@@ -109,41 +109,7 @@ namespace ShipStationAccess.V2.Services
 				await this.CreateDelay( resetDelay );
 			}
 		}
-
-		//		public void PostData( ShipStationCommand command, string jsonContent )
-		//		{
-		//			var request = this.CreateServicePostRequest( command, jsonContent );
-		////			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
-
-		//			try
-		//			{
-		//				using( var response = ( HttpWebResponse )request.GetResponse() )
-		//					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
-		//			}
-		//			catch( WebException x )
-		//			{
-		//				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
-		//				throw;
-		//			}
-		//		}
-
-		//		public async Task PostDataAsync( ShipStationCommand command, string jsonContent )
-		//		{
-		//			var request = this.CreateServicePostRequest( command, jsonContent );
-		//			this.LogPostInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, jsonContent );
-
-		//			try
-		//			{
-		//				using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
-		//					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
-		//			}
-		//			catch( WebException x )
-		//			{
-		//				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
-		//				throw;
-		//			}
-		//		}
-
+		
 		public void PostData( ShipStationCommand command, string jsonContent )
 		{
 			while( true )
