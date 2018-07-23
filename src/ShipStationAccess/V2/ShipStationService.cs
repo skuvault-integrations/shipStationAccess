@@ -318,6 +318,8 @@ namespace ShipStationAccess.V2
 				{
 					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
 						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
+					else if( x.Response.GetHttpStatusCode() == HttpStatusCode.NotFound )
+						ShipStationLogger.Log.Trace( "Error updating order. Encountered 404 Not Found. Order: {order}", order );
 					else
 						throw;
 				}
@@ -339,6 +341,8 @@ namespace ShipStationAccess.V2
 				{
 					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
 						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
+					else if( x.Response.GetHttpStatusCode() == HttpStatusCode.NotFound )
+						ShipStationLogger.Log.Trace( "Error updating order. Encountered 404 Not Found. Order: {order}", order );
 					else
 						throw;
 				}
