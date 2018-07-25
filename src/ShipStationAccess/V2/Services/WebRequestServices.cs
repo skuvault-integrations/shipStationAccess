@@ -24,6 +24,7 @@ namespace ShipStationAccess.V2.Services
 		public WebRequestServices( ShipStationCredentials credentials )
 		{
 			this._credentials = credentials;
+			this.InitSecurityProtocol();
 		}
 
 		public static bool CanSkipException( WebException e )
@@ -73,8 +74,6 @@ namespace ShipStationAccess.V2.Services
 
 		public async Task< T > GetResponseAsync< T >( ShipStationCommand command, string commandParams )
 		{
-			this.InitSecurityProtocol();
-
 			while( true )
 			{
 				var request = this.CreateGetServiceRequest( string.Concat( this._credentials.Host, command.Command, commandParams ) );
@@ -114,8 +113,6 @@ namespace ShipStationAccess.V2.Services
 		
 		public void PostData( ShipStationCommand command, string jsonContent )
 		{
-			this.InitSecurityProtocol();
-
 			while( true )
 			{
 				var request = this.CreateServicePostRequest( command, jsonContent );
@@ -156,8 +153,6 @@ namespace ShipStationAccess.V2.Services
 
 		public async Task PostDataAsync( ShipStationCommand command, string jsonContent )
 		{
-			this.InitSecurityProtocol();
-
 			while( true )
 			{
 				var request = this.CreateServicePostRequest( command, jsonContent );
@@ -198,8 +193,6 @@ namespace ShipStationAccess.V2.Services
 
 		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
 		{
-			this.InitSecurityProtocol();
-
 			while( true )
 			{
 				var request = this.CreateServicePostRequest( command, jsonContent );
@@ -239,8 +232,6 @@ namespace ShipStationAccess.V2.Services
 
 		public async Task< T > PostDataAndGetResponseAsync< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
 		{
-			this.InitSecurityProtocol();
-
 			while( true )
 			{
 				var request = this.CreateServicePostRequest( command, jsonContent );
@@ -280,8 +271,6 @@ namespace ShipStationAccess.V2.Services
 
 		public T PostDataAndGetResponseWithShipstationHeader< T >( ShipStationCommand command, string jsonContent, bool shouldGetExceptionMessage = false )
 		{
-			this.InitSecurityProtocol();
-
 			int numberRequest = 0;
 			while( numberRequest < 20 )
 			{
