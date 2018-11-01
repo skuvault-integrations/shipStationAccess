@@ -9,13 +9,14 @@ namespace ShipStationAccess.V2.Models
 		public string Host{ get; private set; }
 		public string PartnerKey{ get; internal set; }
 
-		public ShipStationCredentials( string apiKey, string apiSecret )
+		public ShipStationCredentials( string apiKey, string apiSecret, string partnerKey = null )
 		{
 			Condition.Requires( apiKey, "apiKey" ).IsNotNullOrWhiteSpace();
 			Condition.Requires( apiSecret, "ApiSecret" ).IsNotNullOrWhiteSpace();
 
 			this.ApiKey = apiKey;
 			this.ApiSecret = apiSecret;
+			this.PartnerKey = partnerKey;
 			this.Host = "https://ssapi.shipstation.com";
 		}
 	}

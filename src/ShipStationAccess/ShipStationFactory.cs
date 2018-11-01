@@ -22,7 +22,9 @@ namespace ShipStationAccess
 		{
 			Condition.Requires( credentials, "credentials" ).IsNotNull();
 
-			credentials.PartnerKey = this._partnerKey;
+			if( string.IsNullOrWhiteSpace( credentials.PartnerKey ) )
+				credentials.PartnerKey = this._partnerKey;
+
 			return new ShipStationService( credentials );
 		}
 	}
