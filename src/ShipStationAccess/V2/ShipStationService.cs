@@ -127,7 +127,7 @@ namespace ShipStationAccess.V2
 					} );
 				} while( currentPage <= pagesCount );
 
-				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+				ShipStationLogger.Log.Info( "Orders downloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
 			};
 
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
@@ -213,7 +213,7 @@ namespace ShipStationAccess.V2
 					}
 				} while( currentPage <= pagesCount );
 
-				ShipStationLogger.Log.Trace( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+				ShipStationLogger.Log.Info( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
 			};
 
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
@@ -271,7 +271,7 @@ namespace ShipStationAccess.V2
 					} );
 				} while( currentPage <= pagesCount );
 
-				ShipStationLogger.Log.Trace( "SS Labels Get Orders '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", this._webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+				ShipStationLogger.Log.Info( "SS Labels Get Orders '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", this._webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
 			};
 
 			var newOrdersEndpoint = ParamsBuilder.CreateStoreIdOrderNumberParams( storeId, orderNumber );
@@ -317,9 +317,9 @@ namespace ShipStationAccess.V2
 				catch( WebException x )
 				{
 					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
+						ShipStationLogger.Log.Error( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
 					else if( x.Response.GetHttpStatusCode() == HttpStatusCode.NotFound )
-						ShipStationLogger.Log.Trace( "Error updating order. Encountered 404 Not Found. Order: {order}", order );
+						ShipStationLogger.Log.Error( "Error updating order. Encountered 404 Not Found. Order: {order}", order );
 					else
 						throw;
 				}
@@ -340,9 +340,9 @@ namespace ShipStationAccess.V2
 				catch( WebException x )
 				{
 					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-						ShipStationLogger.Log.Trace( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
+						ShipStationLogger.Log.Error( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
 					else if( x.Response.GetHttpStatusCode() == HttpStatusCode.NotFound )
-						ShipStationLogger.Log.Trace( "Error updating order. Encountered 404 Not Found. Order: {order}", order );
+						ShipStationLogger.Log.Error( "Error updating order. Encountered 404 Not Found. Order: {order}", order );
 					else
 						throw;
 				}
@@ -416,9 +416,9 @@ namespace ShipStationAccess.V2
 			{
 				try
 				{
-					ShipStationLogger.Log.Trace( "Try send register request. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
+					ShipStationLogger.Log.Info( "Try send register request. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
 					response = this._webRequestServices.PostDataAndGetResponseWithShipstationHeader< ShipStationRegisterResponse >( ShipStationCommand.Register, register.SerializeToJson(), true );
-					ShipStationLogger.Log.Trace( "Try send register request is success. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
+					ShipStationLogger.Log.Info( "Try send register request is success. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
 				}
 				catch( Exception ex )
 				{

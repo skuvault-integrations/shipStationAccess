@@ -418,7 +418,7 @@ namespace ShipStationAccess.V2.Services
 
 				var isThrottled = jsonResponse.Contains( "\"message\": \"Too Many Requests\"" );
 
-				ShipStationLogger.Log.Trace( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}':\n{resetInSeconds} - {isThrottled}\n{response}",
+				ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}':\n{resetInSeconds} - {isThrottled}\n{response}",
 					this._credentials.ApiKey, response.ResponseUri, resetInSeconds, isThrottled, jsonResponse );
 
 				return new ShipStationResponse
@@ -447,22 +447,22 @@ namespace ShipStationAccess.V2.Services
 
 		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tPOSTing call for the apiKey '{apiKey}' and url '{url}' has been completed with code '{code}'.\n{content}", apiKey, url, Convert.ToInt32( statusCode ), jsonContent );
+			ShipStationLogger.Log.Info( "[shipstation]\tPOSTing call for the apiKey '{apiKey}' and url '{url}' has been completed with code '{code}'.\n{content}", apiKey, url, Convert.ToInt32( statusCode ), jsonContent );
 		}
 
 		private void LogPostInfo( string apiKey, string url, string jsonContent )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tPOSTed data for the apiKey '{apiKey}' and url '{url}':\n{jsonContent}", apiKey, url, jsonContent );
+			ShipStationLogger.Log.Info( "[shipstation]\tPOSTed data for the apiKey '{apiKey}' and url '{url}':\n{jsonContent}", apiKey, url, jsonContent );
 		}
 
 		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, WebException x )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, x.Response.GetResponseString(), Convert.ToInt32( statusCode ), jsonContent );
+			ShipStationLogger.Log.Error( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, x.Response.GetResponseString(), Convert.ToInt32( statusCode ), jsonContent );
 		}
 
 		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, string responseString )
 		{
-			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, responseString, Convert.ToInt32( statusCode ), jsonContent );
+			ShipStationLogger.Log.Error( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, responseString, Convert.ToInt32( statusCode ), jsonContent );
 		}
 		#endregion
 	}
