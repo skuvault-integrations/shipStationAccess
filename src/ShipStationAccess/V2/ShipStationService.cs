@@ -148,7 +148,7 @@ namespace ShipStationAccess.V2
 
 			Func< ShipStationOrders, Task > processOrders = async sorders =>
 			{
-				var processedOrders = await sorders.Orders.ProcessInBatchAsync( 50, async o =>
+				var processedOrders = await sorders.Orders.ProcessInBatchAsync( 5, async o =>
 				{
 					var curOrder = o;
 					if( processedOrderIds.Contains( curOrder.OrderId ) )

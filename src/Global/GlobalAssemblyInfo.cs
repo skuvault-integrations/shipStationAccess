@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 
 [ assembly : ComVisible( false ) ]
 [ assembly : AssemblyProduct( "ShipStationAccess" ) ]
-[ assembly : AssemblyCompany( "Agile Harbor, LLC" ) ]
-[ assembly : AssemblyCopyright( "Copyright (C) Agile Harbor, LLC" ) ]
+[ assembly : AssemblyCompany( "SkuVault Inc." ) ]
+[ assembly : AssemblyCopyright( "Copyright (C) SkuVault Inc. 2020" ) ]
 [ assembly : AssemblyDescription( "ShipStation webservices API wrapper." ) ]
 [ assembly : AssemblyTrademark( "" ) ]
 [ assembly : AssemblyCulture( "" ) ]
@@ -23,4 +23,4 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 
 // Keep in track with CA API version
-[ assembly : AssemblyVersion( "1.3.83.0" ) ]
+[ assembly : AssemblyVersion( "1.3.84.0" ) ]
