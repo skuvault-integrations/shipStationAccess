@@ -95,9 +95,11 @@
     <Compile Include="V2\Models\Order\ShipStationCustomItems.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrderAdvancedOptions.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrderDimensions.cs" />
+    <Compile Include="V2\Models\Order\ShipStationOrderFulfillment.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrderInsuranceOptions.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrderInternationalOptions.cs" />
     <Compile Include="V2\Models\Order\ShipStationOrders.cs" />
+    <Compile Include="V2\Models\Order\ShipStationOrderShipment.cs" />
     <Compile Include="V2\Models\Register\ShipStationRegister.cs" />
     <Compile Include="V2\Models\Register\ShipStationRegisterResponse.cs" />
     <Compile Include="V2\Models\ShippingLabel\ShipStationShippingLabel.cs" />

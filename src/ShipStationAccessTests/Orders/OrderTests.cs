@@ -20,6 +20,8 @@ namespace ShipStationAccessTests.Orders
 	{
 		private readonly IShipStationFactory ShipStationFactory = new ShipStationFactory();
 		private ShipStationCredentials _credentials;
+		private string _testOrderWithShipments = "564221696";
+		private string _testOrderWithFulfillments = "576752152";
 
 		[ SetUp ]
 		public void Init()
@@ -54,6 +56,24 @@ namespace ShipStationAccessTests.Orders
 			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
 
 			orders.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public async Task GetOrderShipmentsAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orderShipments = await service.GetOrderShipmentsByIdAsync( this._testOrderWithShipments );
+
+			orderShipments.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public async Task GetOrderFulfillmentsAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orderFulfillments = await service.GetOrderFulfillmentsByIdAsync( this._testOrderWithFulfillments );
+
+			orderFulfillments.Count().Should().BeGreaterThan( 0 );
 		}
 
 		[ Test ]

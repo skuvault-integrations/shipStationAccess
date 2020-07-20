@@ -16,7 +16,8 @@
 		public static readonly ShipStationParam ServiceCode = new ShipStationParam( "serviceCode" );
 		public static readonly ShipStationParam Confirmation = new ShipStationParam( "confirmation" );
 		public static readonly ShipStationParam ShipDate = new ShipStationParam( "shipDate" );
-
+		public static readonly ShipStationParam OrderId = new ShipStationParam( "orderId" );
+		public static readonly ShipStationParam IncludeShipmentItems = new ShipStationParam( "includeShipmentItems" );
 
 		private ShipStationParam( string name )
 		{

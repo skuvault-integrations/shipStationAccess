@@ -107,6 +107,10 @@ namespace ShipStationAccess.V2.Models.Order
 		[ DataMember( Name = "tagIds" ) ]
 		public IList< long > TagsIds { get; set; }
 
+		public IEnumerable< ShipStationOrderShipment > Shipments { get; set; }
+
+		public IEnumerable< ShipStationOrderFulfillment > Fulfillments { get; set; }
+
 		public int MarketplaceId{ get; set; }
 
 		public string MarketplaceName{ get; set; }
