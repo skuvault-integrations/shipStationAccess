@@ -11,6 +11,9 @@
 		public static readonly ShipStationCommand GetStores = new ShipStationCommand( "/Stores" );
 		public static readonly ShipStationCommand GetShippingLabel = new ShipStationCommand( "/Orders/CreateLabelForOrder" );
 		public static readonly ShipStationCommand Register = new ShipStationCommand( "/Integratedapp/Register" );
+		public static readonly ShipStationCommand GetOrderShipments = new ShipStationCommand( "/Shipments" );
+		public static readonly ShipStationCommand GetOrderFulfillments = new ShipStationCommand( "/Fulfillments" );
+
 		private ShipStationCommand( string command )
 		{
 			this.Command = command;

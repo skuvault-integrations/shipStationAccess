@@ -39,6 +39,9 @@ namespace ShipStationAccess.V2.Models.Order
 		[ DataMember( Name = "mergedIds" ) ]
 		public IList< long > MergedIds{ get; set; }
 
+		[ DataMember( Name = "parentId" ) ]
+		public long? ParentId { get; set; }
+
 		[ DataMember( Name = "billToParty" ) ]
 		public string BillToParty{ get; set; }
 

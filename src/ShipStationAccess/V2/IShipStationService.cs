@@ -18,6 +18,8 @@ namespace ShipStationAccess.V2
 
 		ShipStationOrder GetOrderById( string orderId );
 		Task< ShipStationOrder > GetOrderByIdAsync( string orderId );
+		Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByIdAsync( string orderId );
+		Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByIdAsync( string orderId );
 		
 		void UpdateOrder( ShipStationOrder order );
 		Task UpdateOrderAsync( ShipStationOrder order );

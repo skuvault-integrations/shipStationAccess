@@ -162,6 +162,9 @@ namespace ShipStationAccess.V2
 
 				foreach( var order in processedOrders )
 				{
+					order.Shipments = await GetOrderShipmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
+					order.Fulfillments = await GetOrderFulfillmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
+
 					orders.Add( order );
 					processedOrderIds.Add( order.OrderId );
 				}
@@ -299,6 +302,70 @@ namespace ShipStationAccess.V2
 			} );
 
 			return order;
+		}
+
+		public async Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByIdAsync( string orderId )
+		{
+			var orderShipments = new List< ShipStationOrderShipment >();
+
+			var currentPage = 1;
+			var pagesCount = int.MaxValue;
+
+			do
+			{
+				var getOrderShipmentsEndpoint = ParamsBuilder.CreateOrderShipmentsParams( orderId );
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+				var orderShipmentsByPageEndPoint = getOrderShipmentsEndpoint.ConcatParams( nextPageParams );
+
+				await ActionPolicies.GetAsync.Do( async () =>
+				{
+					var orderShipmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderShipments >( ShipStationCommand.GetOrderShipments, orderShipmentsByPageEndPoint );
+				
+					++currentPage;
+					if ( pagesCount == int.MaxValue )
+					{
+						pagesCount = orderShipmentsPage.Pages + 1;
+					}
+
+					orderShipments.AddRange( orderShipmentsPage.Shipments );
+
+				} );
+			}
+			while( currentPage <= pagesCount );
+
+			return orderShipments;
+		}
+
+		public async Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByIdAsync( string orderId )
+		{
+			var orderFulfillments = new List< ShipStationOrderFulfillment >();
+
+			var currentPage = 1;
+			var pagesCount = int.MaxValue;
+
+			do
+			{
+				var getOrderFulfillmentsEndpoint = ParamsBuilder.CreateOrderFulfillmentsParams( orderId );
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+				var orderFulfillmentsByPageEndPoint = getOrderFulfillmentsEndpoint.ConcatParams( nextPageParams );
+
+				await ActionPolicies.GetAsync.Do( async () =>
+				{
+					var orderFulfillmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderFulfillments >( ShipStationCommand.GetOrderFulfillments, orderFulfillmentsByPageEndPoint );
+				
+					++currentPage;
+					if ( pagesCount == int.MaxValue )
+					{
+						pagesCount = orderFulfillmentsPage.Pages + 1;
+					}
+
+					orderFulfillments.AddRange( orderFulfillmentsPage.Fulfillments );
+
+				} );
+			}
+			while( currentPage <= pagesCount );
+
+			return orderFulfillments;
 		}
 		#endregion
 
