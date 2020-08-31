@@ -146,19 +146,19 @@ namespace ShipStationAccess.V2
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
 
-			Func< ShipStationOrders, Task > processOrders = async sorders =>
+			Func< IList< ShipStationOrder >, Task > processOrders = async incomingOrders =>
 			{
-				var processedOrders = await sorders.Orders.ProcessInBatchAsync( 5, async o =>
+				var processedOrders = await incomingOrders.ProcessInBatchAsync( 5, async incomingOrder =>
 				{
-					var curOrder = o;
+					var curOrder = incomingOrder;
 					if( processedOrderIds.Contains( curOrder.OrderId ) )
 						return null;
 
 					if( processOrder != null )
-						curOrder = await processOrder( curOrder );
+						curOrder = await processOrder( curOrder ).ConfigureAwait( false );
 
 					return curOrder;
-				} );
+				} ).ConfigureAwait( false );
 
 				foreach( var order in processedOrders )
 				{
@@ -175,60 +175,48 @@ namespace ShipStationAccess.V2
 
 			Func< string, Task > downloadOrders = async endPoint =>
 			{
-				var pagesCount = int.MaxValue;
+				int? totalShipStationPages = null;
+				int? totalShipStationOrders = null;
 				var currentPage = 1;
-				var ordersCount = 0;
-				var ordersExpected = -1;
+				var ordersDownloaded = 0;
 
 				do
 				{
 					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
 					var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
 
-					ShipStationOrders ordersWithinPage = null;
-					try
+					ShipStationOrders ordersPage = null;
+					await ActionPolicies.GetAsync.Do( async () =>
 					{
-						await ActionPolicies.GetAsync.Do( async () =>
-						{
-							ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
-						} );
-					}
-					catch( WebException e )
-					{
-						if( WebRequestServices.CanSkipException( e ) )
-						{
-							ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint );
-						}
-						else
-							throw;
-					}
+						ordersPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint ).ConfigureAwait( false );
+					} ).ConfigureAwait( false );
 
 					currentPage++;
 
-					if( ordersWithinPage != null )
+					if ( ordersPage?.Orders == null || !ordersPage.Orders.Any() )
+						break;
+
+					if( totalShipStationPages == null )
 					{
-						if( pagesCount == int.MaxValue )
-						{
-							pagesCount = ordersWithinPage.TotalPages;
-							ordersExpected = ordersWithinPage.TotalOrders;
-						}
-
-						ordersCount += ordersWithinPage.Orders.Count;
-
-						await processOrders( ordersWithinPage );
+						totalShipStationPages = ordersPage.TotalPages;
+						totalShipStationOrders = ordersPage.TotalOrders;
 					}
-				} while( currentPage <= pagesCount );
 
-				ShipStationLogger.Log.Info( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+					ordersDownloaded += ordersPage.Orders.Count;
+					await processOrders( ordersPage.Orders ).ConfigureAwait( false );
+
+				} while( currentPage <= totalShipStationPages );
+
+				ShipStationLogger.Log.Info( "Orders downloaded API key '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersDownloaded, totalShipStationOrders ?? 0, currentPage - 1, totalShipStationPages ?? 0, endPoint );
 			};
 
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
-			await downloadOrders( newOrdersEndpoint );
+			await downloadOrders( newOrdersEndpoint ).ConfigureAwait( false );
 
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
-			await downloadOrders( modifiedOrdersEndpoint );
+			await downloadOrders( modifiedOrdersEndpoint ).ConfigureAwait( false );
 
-			await this.FindMarketplaceIdsAsync( orders );
+			await this.FindMarketplaceIdsAsync( orders ).ConfigureAwait( false );
 
 			return orders;
 		}
