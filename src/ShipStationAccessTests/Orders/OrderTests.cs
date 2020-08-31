@@ -59,6 +59,17 @@ namespace ShipStationAccessTests.Orders
 		}
 
 		[ Test ]
+		public async Task GetOrdersWithoutShipmentsAndFulfillmentsAsync()
+		{
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, false );
+
+			orders.Count().Should().BeGreaterThan( 0 );
+			orders.Any( o => o.Shipments != null ).Should().Be( false );
+			orders.Any( o => o.Fulfillments != null ).Should().Be( false );
+		}
+
+		[ Test ]
 		public async Task GetOrderShipmentsAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
@@ -171,7 +182,7 @@ namespace ShipStationAccessTests.Orders
 				await service.UpdateOrderAsync( o );
 				return o;
 			};
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, updateOrderLocation );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, true, updateOrderLocation );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}

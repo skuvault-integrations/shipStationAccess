@@ -141,7 +141,7 @@ namespace ShipStationAccess.V2
 			return orders;
 		}
 
-		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null )
+		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = true, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null )
 		{
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
@@ -162,8 +162,11 @@ namespace ShipStationAccess.V2
 
 				foreach( var order in processedOrders )
 				{
-					order.Shipments = await GetOrderShipmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
-					order.Fulfillments = await GetOrderFulfillmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
+					if ( getShipmentsAndFulfillments )
+					{
+						order.Shipments = await GetOrderShipmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
+						order.Fulfillments = await GetOrderFulfillmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
+					}
 
 					orders.Add( order );
 					processedOrderIds.Add( order.OrderId );
