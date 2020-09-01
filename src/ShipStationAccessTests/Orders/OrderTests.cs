@@ -53,7 +53,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrdersAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -30 ), DateTime.UtcNow, getShipmentsAndFulfillments: true );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow, getShipmentsAndFulfillments: true );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
@@ -62,7 +62,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrdersWithoutShipmentsAndFulfillmentsAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -30 ), DateTime.UtcNow, false );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, getShipmentsAndFulfillments: false );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 			orders.Any( o => o.Shipments != null ).Should().Be( false );
