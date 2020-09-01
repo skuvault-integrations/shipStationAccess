@@ -13,7 +13,7 @@ namespace ShipStationAccess.V2
 	public interface IShipStationService
 	{
 		IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, ShipStationOrder > processOrder = null );
-		Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = true, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null );
+		Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = false, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null );
 		IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber );
 
 		ShipStationOrder GetOrderById( string orderId );
