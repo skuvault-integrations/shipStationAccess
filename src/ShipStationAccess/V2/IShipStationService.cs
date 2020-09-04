@@ -7,13 +7,14 @@ using ShipStationAccess.V2.Models.ShippingLabel;
 using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Models.TagList;
 using ShipStationAccess.V2.Models.WarehouseLocation;
+using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccess.V2
 {
 	public interface IShipStationService
 	{
 		IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, ShipStationOrder > processOrder = null );
-		Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = false, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null );
+		Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = false, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null, Action< IEnumerable< ReadError > > handleSkippedOrders = null );
 		IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber );
 
 		ShipStationOrder GetOrderById( string orderId );

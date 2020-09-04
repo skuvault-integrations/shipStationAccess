@@ -136,14 +136,14 @@ namespace ShipStationAccess.V2
 			return orders;
 		}
 
-		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = false, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null )
+		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = false, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null, Action< IEnumerable< ReadError > > handleSkippedOrders = null )
 		{
 			var allOrders = new List< ShipStationOrder >();
 			var createdOrders = await this.GetCreatedOrdersAsync( dateFrom, dateTo ).ConfigureAwait( false );
-			allOrders.AddRange( createdOrders );
+			allOrders.AddRange( createdOrders.Data );
 
 			var modifiedOrders = await this.GetModifiedOrdersAsync( dateFrom, dateTo ).ConfigureAwait( false );
-			allOrders.AddRange( modifiedOrders );
+			allOrders.AddRange( modifiedOrders.Data );
 
 			var uniqueOrders = allOrders.GroupBy( o => o.OrderId ).Select( gr => gr.First() ).ToList();
 			var processedOrders = await uniqueOrders.ProcessInBatchAsync( 5, async order =>
@@ -159,10 +159,20 @@ namespace ShipStationAccess.V2
 			if ( getShipmentsAndFulfillments )
 				await this.FindShipmentsAndFulfillments( processedOrders ).ConfigureAwait( false );
 
+			if ( handleSkippedOrders != null )
+			{
+				var allSkippedOrders = new List< ReadError >();
+				allSkippedOrders.AddRange( createdOrders.ReadErrors );
+				allSkippedOrders.AddRange( modifiedOrders.ReadErrors );
+
+				if ( allSkippedOrders.Any() )
+					handleSkippedOrders( allSkippedOrders );
+			}
+
 			return processedOrders;
 		}
 
-		public async Task< IEnumerable< ShipStationOrder > > GetCreatedOrdersAsync( DateTime dateFrom, DateTime dateTo )
+		public async Task< PaginatedResponse< ShipStationOrder > > GetCreatedOrdersAsync( DateTime dateFrom, DateTime dateTo )
 		{
 			var createdOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
 			var createdOrdersResponse = await this.DownloadOrdersAsync( createdOrdersEndpoint ).ConfigureAwait( false );
@@ -172,15 +182,15 @@ namespace ShipStationAccess.V2
 					_webRequestServices.GetApiKey(), 
 					createdOrdersResponse.Data.Count(), 
 					createdOrdersResponse.TotalEntitiesExpected ?? 0, 
-					createdOrdersResponse.TotalPagesReceived ?? 0, 
+					createdOrdersResponse.TotalPagesReceived, 
 					createdOrdersResponse.TotalPagesExpected ?? 0, 
 					createdOrdersResponse );
 			}
 
-			return createdOrdersResponse.Data;
+			return createdOrdersResponse;
 		}
 
-		public async Task< IEnumerable< ShipStationOrder > > GetModifiedOrdersAsync( DateTime dateFrom, DateTime dateTo )
+		public async Task< PaginatedResponse< ShipStationOrder > > GetModifiedOrdersAsync( DateTime dateFrom, DateTime dateTo )
 		{
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
 			var modifiedOrdersResponse = await this.DownloadOrdersAsync( modifiedOrdersEndpoint ).ConfigureAwait( false );
@@ -190,19 +200,17 @@ namespace ShipStationAccess.V2
 									_webRequestServices.GetApiKey(), 
 									modifiedOrdersResponse.Data.Count(), 
 									modifiedOrdersResponse.TotalEntitiesExpected ?? 0, 
-									modifiedOrdersResponse.TotalPagesReceived ?? 0, 
+									modifiedOrdersResponse.TotalPagesReceived, 
 									modifiedOrdersResponse.TotalPagesExpected ?? 0, 
 									modifiedOrdersResponse );
 			}
 
-			return modifiedOrdersResponse.Data;
+			return modifiedOrdersResponse;
 		}
 
 		public async Task< PaginatedResponse< ShipStationOrder > > DownloadOrdersAsync( string endPoint )
 		{ 
-			var orders = new List< ShipStationOrder >();
-			int? totalShipStationPages = null;
-			int? totalShipStationOrders = null;
+			var response = new PaginatedResponse< ShipStationOrder >();
 			var currentPage = 1;
 
 			do
@@ -211,29 +219,47 @@ namespace ShipStationAccess.V2
 				var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
 
 				ShipStationOrders ordersPage = null;
-				await ActionPolicies.GetAsync.Do( async () =>
+				try
 				{
-					ordersPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint ).ConfigureAwait( false );
-				} );
+					await ActionPolicies.GetAsync.Do( async () =>
+					{
+						ordersPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint ).ConfigureAwait( false );
+					} );
+				}
+				catch( WebException e )
+				{
+					if( WebRequestServices.CanSkipException( e ) )
+					{
+						response.ReadErrors.Add( new ReadError()
+						{
+							Url = endPoint,
+							Page = currentPage,
+							PageSize = RequestMaxLimit
+						} );
+
+						ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint );
+						currentPage++;
+						continue;
+					}
+					else
+						throw;
+				}
 
 				currentPage++;
 
 				if ( ordersPage?.Orders == null || !ordersPage.Orders.Any() )
 					break;
 
-				totalShipStationPages = ordersPage.TotalPages;
-				totalShipStationOrders = ordersPage.TotalOrders;
+				response.TotalPagesExpected = ordersPage.TotalPages;
+				response.TotalEntitiesExpected = ordersPage.TotalOrders;
 
-				orders.AddRange( ordersPage.Orders );
+				response.Data.AddRange( ordersPage.Orders );
 
-			} while( currentPage <= totalShipStationPages );
+			} while( currentPage <= response.TotalPagesExpected );
 			
-			return new PaginatedResponse< ShipStationOrder >( orders )
-			{
-				TotalPagesExpected = totalShipStationPages,
-				TotalEntitiesExpected = totalShipStationOrders,
-				TotalPagesReceived = currentPage - 1
-			};
+			response.TotalPagesReceived = currentPage - 1;
+			
+			return response;
 		}
 
 		public IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber )

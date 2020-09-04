@@ -26,7 +26,7 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ActionPolicy _shipStationSubmitPolicy = ActionPolicy.With( _exceptionHandler ).Retry( 10, ( ex, i ) =>
 		{
-			var delay = TimeSpan.FromSeconds( Math.Pow( 2, i ) );
+			var delay = TimeSpan.FromSeconds( 0.5 + i );
 			ShipStationLogger.Log.Error( ex, "Retrying ShipStation API submit call for the {retryCounter} time, delay {delayInSeconds} seconds", i, delay.TotalSeconds );
 			SystemUtil.Sleep( delay );
 		} );
@@ -38,7 +38,7 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ActionPolicyAsync _shipStationSubmitAsyncPolicy = ActionPolicyAsync.With( _exceptionHandler ).RetryAsync( 10, async ( ex, i ) =>
 		{
-			var delay = TimeSpan.FromSeconds( Math.Pow( 2, i ) );
+			var delay = TimeSpan.FromSeconds( 0.5 + i );
 			ShipStationLogger.Log.Error( ex, "Retrying ShipStation API submit call for the {retryCounter} time, delay {delayInSeconds} seconds", i, delay.TotalSeconds );
 			await Task.Delay( delay );
 		} );
@@ -50,7 +50,7 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ActionPolicy _shipStationGetPolicy = ActionPolicy.With( _exceptionHandler ).Retry( 10, ( ex, i ) =>
 		{
-			var delay = TimeSpan.FromSeconds( Math.Pow( 2, i ) );
+			var delay = TimeSpan.FromSeconds( 0.5 + i );
 			ShipStationLogger.Log.Error( ex, "Retrying ShipStation API get call for the {retryCounter} time, delay {delayInSeconds} seconds", i, delay.TotalSeconds );
 			SystemUtil.Sleep( delay );
 		} );
@@ -62,7 +62,7 @@ namespace ShipStationAccess.V2.Misc
 
 		private static readonly ActionPolicyAsync _shipStationGetAsyncPolicy = ActionPolicyAsync.With( _exceptionHandler ).RetryAsync( 10, async ( ex, i ) =>
 		{
-			var delay = TimeSpan.FromSeconds( Math.Pow( 2, i ) );
+			var delay = TimeSpan.FromSeconds( 0.5 + i );
 			ShipStationLogger.Log.Error( ex, "Retrying ShipStation API get call for the {retryCounter} time, delay {delayInSeconds} seconds", i, delay.TotalSeconds );
 			await Task.Delay( delay );
 		} );

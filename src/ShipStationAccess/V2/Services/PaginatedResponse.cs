@@ -6,13 +6,22 @@ namespace ShipStationAccess.V2.Services
 	{
 		public int? TotalPagesExpected { get; set; }
 		public int? TotalEntitiesExpected { get; set; }
-		public int? TotalPagesReceived { get; set; }
+		public int TotalPagesReceived { get; set; }
 
-		public IEnumerable< T > Data { get; private set; }
+		public List< T > Data { get; private set; }
+		public List< ReadError > ReadErrors { get; private set; }
 
-		public PaginatedResponse( IEnumerable< T > data )
+		public PaginatedResponse()
 		{
-			this.Data = data ?? new List< T >();
+			this.Data = new List< T >();
+			this.ReadErrors = new List< ReadError >();
 		}
+	}
+
+	public sealed class ReadError
+	{
+		public string Url { get; set; }
+		public int PageSize { get; set; }
+		public int Page { get; set; }
 	}
 }
