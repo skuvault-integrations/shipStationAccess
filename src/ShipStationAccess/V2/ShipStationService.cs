@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.CSharp.RuntimeBinder;
 using Netco.Extensions;
-using Newtonsoft.Json;
 using ShipStationAccess.V2.Exceptions;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
@@ -141,98 +136,132 @@ namespace ShipStationAccess.V2
 			return orders;
 		}
 
-		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = true, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null )
+		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = false, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null, Action< IEnumerable< ReadError > > handleSkippedOrders = null )
 		{
-			var orders = new List< ShipStationOrder >();
-			var processedOrderIds = new HashSet< long >();
+			var allOrders = new List< ShipStationOrder >();
+			var createdOrders = await this.GetCreatedOrdersAsync( dateFrom, dateTo ).ConfigureAwait( false );
+			allOrders.AddRange( createdOrders.Data );
 
-			Func< ShipStationOrders, Task > processOrders = async sorders =>
+			var modifiedOrders = await this.GetModifiedOrdersAsync( dateFrom, dateTo ).ConfigureAwait( false );
+			allOrders.AddRange( modifiedOrders.Data );
+
+			var uniqueOrders = allOrders.GroupBy( o => o.OrderId ).Select( gr => gr.First() ).ToList();
+			var processedOrders = await uniqueOrders.ProcessInBatchAsync( 5, async order =>
 			{
-				var processedOrders = await sorders.Orders.ProcessInBatchAsync( 5, async o =>
-				{
-					var curOrder = o;
-					if( processedOrderIds.Contains( curOrder.OrderId ) )
-						return null;
+				if( processOrder != null )
+					order = await processOrder( order ).ConfigureAwait( false );
 
-					if( processOrder != null )
-						curOrder = await processOrder( curOrder );
+				return order;
+			} );
 
-					return curOrder;
-				} );
+			await this.FindMarketplaceIdsAsync( processedOrders ).ConfigureAwait( false );
 
-				foreach( var order in processedOrders )
-				{
-					if ( getShipmentsAndFulfillments )
-					{
-						order.Shipments = await GetOrderShipmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
-						order.Fulfillments = await GetOrderFulfillmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
-					}
+			if ( getShipmentsAndFulfillments )
+				await this.FindShipmentsAndFulfillments( processedOrders ).ConfigureAwait( false );
 
-					orders.Add( order );
-					processedOrderIds.Add( order.OrderId );
-				}
-			};
-
-			Func< string, Task > downloadOrders = async endPoint =>
+			if ( handleSkippedOrders != null )
 			{
-				var pagesCount = int.MaxValue;
-				var currentPage = 1;
-				var ordersCount = 0;
-				var ordersExpected = -1;
+				var allSkippedOrders = new List< ReadError >();
+				allSkippedOrders.AddRange( createdOrders.ReadErrors );
+				allSkippedOrders.AddRange( modifiedOrders.ReadErrors );
 
-				do
-				{
-					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
-					var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
+				if ( allSkippedOrders.Any() )
+					handleSkippedOrders( allSkippedOrders );
+			}
 
-					ShipStationOrders ordersWithinPage = null;
-					try
-					{
-						await ActionPolicies.GetAsync.Do( async () =>
-						{
-							ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
-						} );
-					}
-					catch( WebException e )
-					{
-						if( WebRequestServices.CanSkipException( e ) )
-						{
-							ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint );
-						}
-						else
-							throw;
-					}
-
-					currentPage++;
-
-					if( ordersWithinPage != null )
-					{
-						if( pagesCount == int.MaxValue )
-						{
-							pagesCount = ordersWithinPage.TotalPages;
-							ordersExpected = ordersWithinPage.TotalOrders;
-						}
-
-						ordersCount += ordersWithinPage.Orders.Count;
-
-						await processOrders( ordersWithinPage );
-					}
-				} while( currentPage <= pagesCount );
-
-				ShipStationLogger.Log.Info( "Orders dowloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
-			};
-
-			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
-			await downloadOrders( newOrdersEndpoint );
-
-			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
-			await downloadOrders( modifiedOrdersEndpoint );
-
-			await this.FindMarketplaceIdsAsync( orders );
-
-			return orders;
+			return processedOrders;
 		}
-		
+
+		public async Task< PaginatedResponse< ShipStationOrder > > GetCreatedOrdersAsync( DateTime dateFrom, DateTime dateTo )
+		{
+			var createdOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
+			var createdOrdersResponse = await this.DownloadOrdersAsync( createdOrdersEndpoint ).ConfigureAwait( false );
+			if ( createdOrdersResponse.Data.Any() )
+			{
+				ShipStationLogger.Log.Info( "Created orders downloaded using tenant's API key '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", 
+					_webRequestServices.GetApiKey(), 
+					createdOrdersResponse.Data.Count(), 
+					createdOrdersResponse.TotalEntitiesExpected ?? 0, 
+					createdOrdersResponse.TotalPagesReceived, 
+					createdOrdersResponse.TotalPagesExpected ?? 0, 
+					createdOrdersResponse );
+			}
+
+			return createdOrdersResponse;
+		}
+
+		public async Task< PaginatedResponse< ShipStationOrder > > GetModifiedOrdersAsync( DateTime dateFrom, DateTime dateTo )
+		{
+			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
+			var modifiedOrdersResponse = await this.DownloadOrdersAsync( modifiedOrdersEndpoint ).ConfigureAwait( false );
+			if ( modifiedOrdersResponse.Data.Any() )
+			{
+				ShipStationLogger.Log.Info( "Modified orders downloaded using tenant's API key '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", 
+									_webRequestServices.GetApiKey(), 
+									modifiedOrdersResponse.Data.Count(), 
+									modifiedOrdersResponse.TotalEntitiesExpected ?? 0, 
+									modifiedOrdersResponse.TotalPagesReceived, 
+									modifiedOrdersResponse.TotalPagesExpected ?? 0, 
+									modifiedOrdersResponse );
+			}
+
+			return modifiedOrdersResponse;
+		}
+
+		public async Task< PaginatedResponse< ShipStationOrder > > DownloadOrdersAsync( string endPoint )
+		{ 
+			var response = new PaginatedResponse< ShipStationOrder >();
+			var currentPage = 1;
+
+			do
+			{
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+				var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
+
+				ShipStationOrders ordersPage = null;
+				try
+				{
+					await ActionPolicies.GetAsync.Do( async () =>
+					{
+						ordersPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint ).ConfigureAwait( false );
+					} );
+				}
+				catch( WebException e )
+				{
+					if( WebRequestServices.CanSkipException( e ) )
+					{
+						response.ReadErrors.Add( new ReadError()
+						{
+							Url = endPoint,
+							Page = currentPage,
+							PageSize = RequestMaxLimit
+						} );
+
+						ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint );
+						currentPage++;
+						continue;
+					}
+					else
+						throw;
+				}
+
+				currentPage++;
+
+				if ( ordersPage?.Orders == null || !ordersPage.Orders.Any() )
+					break;
+
+				response.TotalPagesExpected = ordersPage.TotalPages;
+				response.TotalEntitiesExpected = ordersPage.TotalOrders;
+
+				response.Data.AddRange( ordersPage.Orders );
+
+			} while( currentPage <= response.TotalPagesExpected );
+			
+			response.TotalPagesReceived = currentPage - 1;
+			
+			return response;
+		}
+
 		public IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber )
 		{
 			var orders = new List< ShipStationOrder >();
@@ -307,12 +336,21 @@ namespace ShipStationAccess.V2
 			return order;
 		}
 
+		private async Task FindShipmentsAndFulfillments( IEnumerable< ShipStationOrder > orders )
+		{
+			foreach( var order in orders )
+			{
+				order.Shipments = await this.GetOrderShipmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
+				order.Fulfillments = await this.GetOrderFulfillmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
+			}
+		}
+
 		public async Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByIdAsync( string orderId )
 		{
 			var orderShipments = new List< ShipStationOrderShipment >();
 
 			var currentPage = 1;
-			var pagesCount = int.MaxValue;
+			int? totalShipStationShipmentsPages;
 
 			do
 			{
@@ -320,21 +358,21 @@ namespace ShipStationAccess.V2
 				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
 				var orderShipmentsByPageEndPoint = getOrderShipmentsEndpoint.ConcatParams( nextPageParams );
 
+				ShipStationOrderShipments ordersShipmentsPage = null;
 				await ActionPolicies.GetAsync.Do( async () =>
 				{
-					var orderShipmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderShipments >( ShipStationCommand.GetOrderShipments, orderShipmentsByPageEndPoint );
-				
-					++currentPage;
-					if ( pagesCount == int.MaxValue )
-					{
-						pagesCount = orderShipmentsPage.Pages + 1;
-					}
-
-					orderShipments.AddRange( orderShipmentsPage.Shipments );
-
+					ordersShipmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderShipments >( ShipStationCommand.GetOrderShipments, orderShipmentsByPageEndPoint ).ConfigureAwait( false );
 				} );
+
+				if ( ordersShipmentsPage?.Shipments == null || !ordersShipmentsPage.Shipments.Any() )
+					break;
+
+				++currentPage;
+				totalShipStationShipmentsPages = ordersShipmentsPage.Pages + 1;
+
+				orderShipments.AddRange( ordersShipmentsPage.Shipments );
 			}
-			while( currentPage <= pagesCount );
+			while( currentPage <= totalShipStationShipmentsPages );
 
 			return orderShipments;
 		}
@@ -344,7 +382,7 @@ namespace ShipStationAccess.V2
 			var orderFulfillments = new List< ShipStationOrderFulfillment >();
 
 			var currentPage = 1;
-			var pagesCount = int.MaxValue;
+			int? totalShipStationFulfillmentsPages;
 
 			do
 			{
@@ -352,21 +390,21 @@ namespace ShipStationAccess.V2
 				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
 				var orderFulfillmentsByPageEndPoint = getOrderFulfillmentsEndpoint.ConcatParams( nextPageParams );
 
+				ShipStationOrderFulfillments orderFulfillmentsPage = null;
 				await ActionPolicies.GetAsync.Do( async () =>
 				{
-					var orderFulfillmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderFulfillments >( ShipStationCommand.GetOrderFulfillments, orderFulfillmentsByPageEndPoint );
-				
-					++currentPage;
-					if ( pagesCount == int.MaxValue )
-					{
-						pagesCount = orderFulfillmentsPage.Pages + 1;
-					}
-
-					orderFulfillments.AddRange( orderFulfillmentsPage.Fulfillments );
-
+					orderFulfillmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderFulfillments >( ShipStationCommand.GetOrderFulfillments, orderFulfillmentsByPageEndPoint ).ConfigureAwait( false );
 				} );
+
+				if ( orderFulfillmentsPage?.Fulfillments == null || !orderFulfillmentsPage.Fulfillments.Any() )
+					break;
+
+				++currentPage;
+				totalShipStationFulfillmentsPages = orderFulfillmentsPage.Pages + 1;
+
+				orderFulfillments.AddRange( orderFulfillmentsPage.Fulfillments );
 			}
-			while( currentPage <= pagesCount );
+			while( currentPage <= totalShipStationFulfillmentsPages );
 
 			return orderFulfillments;
 		}
@@ -520,7 +558,7 @@ namespace ShipStationAccess.V2
 
 		private async Task FindMarketplaceIdsAsync( IEnumerable< ShipStationOrder > orders )
 		{
-			var stores = await this.GetStoresAsync();
+			var stores = await this.GetStoresAsync().ConfigureAwait( false );
 
 			foreach( var order in orders )
 			{

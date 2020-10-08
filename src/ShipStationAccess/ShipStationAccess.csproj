@@ -115,6 +115,7 @@
     <Compile Include="V2\Models\TagList\ShipStationTag.cs" />
     <Compile Include="V2\Services\DateTimeExtensions.cs" />
     <Compile Include="V2\Services\JsonSerialization.cs" />
+    <Compile Include="V2\Services\PaginatedResponse.cs" />
     <Compile Include="V2\Services\ParamsBuilder.cs" />
     <Compile Include="V2\Services\WebRequestServices.cs" />
     <Compile Include="V2\ShipStationService.cs" />
