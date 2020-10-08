@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using LINQtoCSV;
@@ -44,7 +46,7 @@ namespace ShipStationAccessTests.Orders
 		public void GetOrders()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
@@ -53,16 +55,54 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrdersAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
 
 			orders.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		public void GivenTooSmallTimeout_WhenGetOrdersIsCalled_ThenExceptionIsReturned()
+		{
+			var timeouts = new ShipStationOperationsTimeouts();
+			var tinyTimeout = new ShipStationOperationTimeout( 10 );
+			timeouts.Set( ShipStationOperationEnum.ListOrders, tinyTimeout );
+			timeouts.Set( ShipStationOperationEnum.GetOrderShipments, tinyTimeout );
+			timeouts.Set( ShipStationOperationEnum.GetOrderFulfillments, tinyTimeout );
+
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials, timeouts );
+
+			var ex = Assert.Throws< WebException >( () => {
+				var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
+			} );
+			
+			ex.Should().NotBeNull();
+			ex.Status.Should().Be( WebExceptionStatus.Timeout );
+		}
+
+		[ Test ]
+		public void GivenTooSmallTimeout_WhenGetOrdersAsyncIsCalled_ThenExceptionIsReturned()
+		{
+			var timeouts = new ShipStationOperationsTimeouts();
+			var tinyTimeout = new ShipStationOperationTimeout( 10 );
+			timeouts.Set( ShipStationOperationEnum.ListOrders, tinyTimeout );
+			timeouts.Set( ShipStationOperationEnum.GetOrderShipments, tinyTimeout );
+			timeouts.Set( ShipStationOperationEnum.GetOrderFulfillments, tinyTimeout );
+
+			var service = this.ShipStationFactory.CreateServiceV2( this._credentials, timeouts );
+
+			var ex = Assert.Throws< WebException >( async () => {
+				var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
+			} );
+			
+			ex.Should().NotBeNull();
+			ex.Status.Should().Be( WebExceptionStatus.Timeout );
 		}
 
 		[ Test ]
 		public async Task GetOrdersWithoutShipmentsAndFulfillmentsAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, false );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None, false );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 			orders.Any( o => o.Shipments != null ).Should().Be( false );
@@ -73,7 +113,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrderShipmentsAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orderShipments = await service.GetOrderShipmentsByIdAsync( this._testOrderWithShipments );
+			var orderShipments = await service.GetOrderShipmentsByIdAsync( this._testOrderWithShipments, CancellationToken.None );
 
 			orderShipments.Count().Should().BeGreaterThan( 0 );
 		}
@@ -82,7 +122,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrderFulfillmentsAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orderFulfillments = await service.GetOrderFulfillmentsByIdAsync( this._testOrderWithFulfillments );
+			var orderFulfillments = await service.GetOrderFulfillmentsByIdAsync( this._testOrderWithFulfillments, CancellationToken.None );
 
 			orderFulfillments.Count().Should().BeGreaterThan( 0 );
 		}
@@ -91,7 +131,7 @@ namespace ShipStationAccessTests.Orders
 		public void GetTags()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var tags = service.GetTags();
+			var tags = service.GetTags( CancellationToken.None );
 
 			tags.Count().Should().BeGreaterThan( 0 );
 		}
@@ -100,7 +140,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetTagsAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var tags = await service.GetTagsAsync();
+			var tags = await service.GetTagsAsync( CancellationToken.None );
 
 			tags.Count().Should().BeGreaterThan( 0 );
 		}
@@ -109,12 +149,12 @@ namespace ShipStationAccessTests.Orders
 		public void GetShippingLabelAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None );
 			var order = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment && or.OrderNumber == 100339.ToString() );
 
 			if( order == null )
 				Assert.Fail( "No order found to update" );
-			var label = service.CreateAndGetShippingLabelAsync( order.AdvancedOptions.StoreId.ToString(), order.CarrierCode, order.ServiceCode, order.PackageCode, order.Confirmation, DateTime.UtcNow, null, null );
+			var label = service.CreateAndGetShippingLabelAsync( order.AdvancedOptions.StoreId.ToString(), order.CarrierCode, order.ServiceCode, order.PackageCode, order.Confirmation, DateTime.UtcNow, null, null, CancellationToken.None );
 			label.Should().NotBeNull();
 		}
 
@@ -122,7 +162,7 @@ namespace ShipStationAccessTests.Orders
 		public void UpdateOrder()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None );
 			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
@@ -132,21 +172,21 @@ namespace ShipStationAccessTests.Orders
 			}
 
 			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(30)";
-			service.UpdateOrder( orderToChange );
+			service.UpdateOrder( orderToChange, CancellationToken.None );
 		}
 
 		[ Test ]
 		public async Task UpdateOrderAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -90 ), DateTime.UtcNow, CancellationToken.None );
 			var orderToChange = orders.Select( o => o ).FirstOrDefault( or => or.IsValid() && or.OrderStatus == ShipStationOrderStatusEnum.awaiting_shipment || or.OrderStatus == ShipStationOrderStatusEnum.awaiting_payment );
 
 			if( orderToChange == null )
 				return;
 
 			orderToChange.Items[ 0 ].WarehouseLocation = "AA22(30)";
-			await service.UpdateOrderAsync( orderToChange );
+			await service.UpdateOrderAsync( orderToChange, CancellationToken.None );
 		}
 
 		[ Test ]
@@ -160,10 +200,10 @@ namespace ShipStationAccessTests.Orders
 					return o;
 
 				o.Items[ 0 ].WarehouseLocation = "AA{0}({1})".FormatWith( rand.Next( 1, 99 ), rand.Next( 1, 50 ) );
-				service.UpdateOrder( o );
+				service.UpdateOrder( o, CancellationToken.None );
 				return o;
 			};
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -2 ), DateTime.UtcNow, updateOrderLocation );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -2 ), DateTime.UtcNow, CancellationToken.None, updateOrderLocation );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
@@ -179,10 +219,10 @@ namespace ShipStationAccessTests.Orders
 					return o;
 
 				o.Items[ 0 ].WarehouseLocation = "AA{0}({1})".FormatWith( rand.Next( 1, 99 ), rand.Next( 1, 50 ) );
-				await service.UpdateOrderAsync( o );
+				await service.UpdateOrderAsync( o, CancellationToken.None );
 				return o;
 			};
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, true, updateOrderLocation );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, CancellationToken.None, true, updateOrderLocation );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
@@ -192,7 +232,7 @@ namespace ShipStationAccessTests.Orders
 		{
 			var numbers = new List< string > { "100274", "100275" };
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None );
 			var ordersToChange = orders.Select( o => o ).Where( or => or.IsValid() && numbers.Contains( or.OrderNumber ) ).ToList();
 			if( ordersToChange.Count == 0 )
 			{
@@ -206,7 +246,7 @@ namespace ShipStationAccessTests.Orders
 				warehouseLocations.AddItems( "AA22(30)", orderToCahnge.Items.Select( x => x.OrderItemId ) );
 			}
 
-			service.UpdateOrderItemsWarehouseLocations( warehouseLocations );
+			service.UpdateOrderItemsWarehouseLocations( warehouseLocations, CancellationToken.None );
 		}
 
 		[ Test ]
@@ -214,7 +254,7 @@ namespace ShipStationAccessTests.Orders
 		{
 			var numbers = new List< string > { "100274", "100275" };
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None );
 			var ordersToChange = orders.Select( o => o ).Where( or => or.IsValid() && numbers.Contains( or.OrderNumber ) ).ToList();
 			if( ordersToChange.Count == 0 )
 			{
@@ -227,14 +267,14 @@ namespace ShipStationAccessTests.Orders
 			{
 				warehouseLocations.AddItems( "AA25(35),DD(1)", orderToCahnge.Items.Select( x => x.OrderItemId ) );
 			}
-			await service.UpdateOrderItemsWarehouseLocationsAsync( warehouseLocations );
+			await service.UpdateOrderItemsWarehouseLocationsAsync( warehouseLocations, CancellationToken.None );
 		}
 
 		[ Test ]
 		public void GetStores()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var stores = service.GetStores();
+			var stores = service.GetStores( CancellationToken.None );
 
 			stores.Count().Should().BeGreaterThan( 0 );
 		}
@@ -243,7 +283,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetStoresAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var stores = await service.GetStoresAsync();
+			var stores = await service.GetStoresAsync( CancellationToken.None );
 
 			stores.Count().Should().BeGreaterThan( 0 );
 		}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using LINQtoCSV;
 using Netco.Logging;
 using Netco.Logging.SerilogIntegration;
@@ -39,7 +40,7 @@ namespace ShipStationAccessTests.Orders
 			try
 			{
 				var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-				service.Register( new ShipStationRegister( "skuvault", this._credentials.ApiSecret, this._credentials.ApiKey ) );
+				service.Register( new ShipStationRegister( "skuvault", this._credentials.ApiSecret, this._credentials.ApiKey ), CancellationToken.None );
 			}
 			catch( Exception ex )
 			{

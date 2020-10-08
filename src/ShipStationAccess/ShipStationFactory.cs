@@ -6,6 +6,7 @@ namespace ShipStationAccess
 {
 	public interface IShipStationFactory
 	{
+		IShipStationService CreateServiceV2( ShipStationCredentials credentials, ShipStationOperationsTimeouts operationsTimeouts );
 		IShipStationService CreateServiceV2( ShipStationCredentials credentials );
 	}
 
@@ -20,12 +21,17 @@ namespace ShipStationAccess
 
 		public IShipStationService CreateServiceV2( ShipStationCredentials credentials )
 		{
+			return CreateServiceV2( credentials, new ShipStationOperationsTimeouts() );
+		}
+
+		public IShipStationService CreateServiceV2( ShipStationCredentials credentials, ShipStationOperationsTimeouts operationsTimeouts )
+		{
 			Condition.Requires( credentials, "credentials" ).IsNotNull();
 
 			if( string.IsNullOrWhiteSpace( credentials.PartnerKey ) )
 				credentials.PartnerKey = this._partnerKey;
 
-			return new ShipStationService( credentials );
+			return new ShipStationService( credentials, operationsTimeouts );
 		}
 	}
 }

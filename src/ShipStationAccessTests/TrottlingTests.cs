@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using LINQtoCSV;
@@ -44,13 +45,13 @@ namespace ShipStationAccessTests
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var endDate = DateTime.UtcNow; //new DateTime( 2015, 06, 01, 22, 45, 00, DateTimeKind.Utc );
 
-			var orders = service.GetOrders( endDate.AddDays( -1 ), endDate );
+			var orders = service.GetOrders( endDate.AddDays( -1 ), endDate, CancellationToken.None );
 
 			var tasks = new List< Task >();
 
 			foreach( var i in Enumerable.Range( 0, 500 ) )
 			{
-				tasks.Add( service.GetOrdersAsync( endDate.AddDays( -1 ), endDate ) );
+				tasks.Add( service.GetOrdersAsync( endDate.AddDays( -1 ), endDate, CancellationToken.None ) );
 			}
 
 			await Task.WhenAll( tasks );

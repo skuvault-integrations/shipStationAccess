@@ -21,6 +21,9 @@ namespace ShipStationAccess.V2.Misc
 			var webX = x as WebException;
 			if( webX == null )
 				return true;
+			if ( webX.Response == null )
+				return false;
+
 			return webX.Response.GetHttpStatusCode() != HttpStatusCode.Unauthorized;
 		};
 

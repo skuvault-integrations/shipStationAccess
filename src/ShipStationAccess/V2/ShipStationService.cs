@@ -20,43 +20,60 @@ using ShipStationAccess.V2.Models.TagList;
 using ShipStationAccess.V2.Models.WarehouseLocation;
 using ShipStationAccess.V2.Services;
 using ShipStationAccess.V2.Models.Register;
+using System.Threading;
 
 namespace ShipStationAccess.V2
 {
 	public sealed class ShipStationService: IShipStationService
 	{
 		private readonly WebRequestServices _webRequestServices;
+		private readonly ShipStationOperationsTimeouts _timeouts;
+
 		// lowered max limit for less order loss on Shipsation API's internal errors
 		private const int RequestMaxLimit = 20;
 
-		public ShipStationService( ShipStationCredentials credentials )
+		private DateTime _lastActivityTime;
+
+		public ShipStationService( ShipStationCredentials credentials, ShipStationOperationsTimeouts timeouts )
 		{
 			this._webRequestServices = new WebRequestServices( credentials );
+			this._timeouts = timeouts;
+			_lastActivityTime = DateTime.UtcNow;
 		}
 
-		public IEnumerable< ShipStationTag > GetTags()
+		public ShipStationService( ShipStationCredentials credentials ) : this( credentials, new ShipStationOperationsTimeouts() ) { }
+
+		public DateTime LastActivityTime
+		{
+			get
+			{
+				return this._webRequestServices.LastNetworkActivityTime ?? DateTime.UtcNow;
+			}
+		}
+
+		public IEnumerable< ShipStationTag > GetTags( CancellationToken token )
 		{
 			var tags = new List< ShipStationTag >();
 			ActionPolicies.Get.Do( () =>
 			{
-				tags = this._webRequestServices.GetResponse< List< ShipStationTag > >( ShipStationCommand.GetTags, string.Empty );
+				tags = this._webRequestServices.GetResponse< List< ShipStationTag > >( ShipStationCommand.GetTags, string.Empty, token, _timeouts[ ShipStationOperationEnum.GetTags ] );
 			} );
 
 			return tags;
 		}
 
-		public async Task< IEnumerable< ShipStationTag > > GetTagsAsync()
+		public async Task< IEnumerable< ShipStationTag > > GetTagsAsync( CancellationToken token )
 		{
 			var tags = new List< ShipStationTag >();
 			await ActionPolicies.GetAsync.Do( async () =>
 			{
-				tags = await this._webRequestServices.GetResponseAsync< List< ShipStationTag > >( ShipStationCommand.GetTags, string.Empty );
+				tags = await this._webRequestServices.GetResponseAsync< List< ShipStationTag > >( ShipStationCommand.GetTags, string.Empty, token, _timeouts[ ShipStationOperationEnum.GetTags ] );
 			} );
 
 			return tags;
 		}
 
-		public async Task < ShipStationShippingLabel > CreateAndGetShippingLabelAsync( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, string weight, string weightUnit, bool isTestLabel = false )
+		public async Task < ShipStationShippingLabel > CreateAndGetShippingLabelAsync( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, string weight, string weightUnit, CancellationToken token, bool isTestLabel = false )
 		{
 			//return ShipStationShippingLabel.GetMockShippingLabel();
 			return await ActionPolicies.GetAsync.Get( async () =>
@@ -68,7 +85,7 @@ namespace ShipStationAccess.V2
 					if( string.IsNullOrWhiteSpace( confirmation ) )
 						throw new ShipStationLabelException( "Has a confirmation type been selected in ShipStation for this order?" );
 					var endpoint = ShipStationShippingLabelRequest.From( shipStationOrderId, carrierCode, serviceCode, packageCode, confirmation, shipDate, weight, weightUnit, isTestLabel ).SerializeToJson();
-					return await this._webRequestServices.PostDataAndGetResponseAsync< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, true );
+					return await this._webRequestServices.PostDataAndGetResponseAsync< ShipStationShippingLabel >( ShipStationCommand.GetShippingLabel, endpoint, token, true, _timeouts[ ShipStationOperationEnum.GetShippingLabel ] );
 
 				}
 				catch( Exception ex )
@@ -81,7 +98,7 @@ namespace ShipStationAccess.V2
 		}
 
 		#region Get Orders
-		public IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, ShipStationOrder > processOrder = null )
+		public IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, CancellationToken token, Func< ShipStationOrder, ShipStationOrder > processOrder = null )
 		{
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
@@ -114,7 +131,7 @@ namespace ShipStationAccess.V2
 
 					ActionPolicies.Get.Do( () =>
 					{
-						var ordersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
+						var ordersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint, token, _timeouts[ ShipStationOperationEnum.ListOrders ] );
 						if( pagesCount == int.MaxValue )
 						{
 							pagesCount = ordersWithinPage.TotalPages;
@@ -136,12 +153,12 @@ namespace ShipStationAccess.V2
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
 			downloadOrders( modifiedOrdersEndpoint );
 
-			this.FindMarketplaceIds( orders );
+			this.FindMarketplaceIds( orders, token );
 
 			return orders;
 		}
 
-		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = true, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null )
+		public async Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, CancellationToken token, bool getShipmentsAndFulfillments = true, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null )
 		{
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
@@ -164,8 +181,8 @@ namespace ShipStationAccess.V2
 				{
 					if ( getShipmentsAndFulfillments )
 					{
-						order.Shipments = await GetOrderShipmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
-						order.Fulfillments = await GetOrderFulfillmentsByIdAsync( order.OrderId.ToString() ).ConfigureAwait( false );
+						order.Shipments = await GetOrderShipmentsByIdAsync( order.OrderId.ToString(), token ).ConfigureAwait( false );
+						order.Fulfillments = await GetOrderFulfillmentsByIdAsync( order.OrderId.ToString(), token ).ConfigureAwait( false );
 					}
 
 					orders.Add( order );
@@ -190,7 +207,7 @@ namespace ShipStationAccess.V2
 					{
 						await ActionPolicies.GetAsync.Do( async () =>
 						{
-							ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
+							ordersWithinPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint, token, _timeouts[ ShipStationOperationEnum.ListOrders ] );
 						} );
 					}
 					catch( WebException e )
@@ -228,12 +245,12 @@ namespace ShipStationAccess.V2
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
 			await downloadOrders( modifiedOrdersEndpoint );
 
-			await this.FindMarketplaceIdsAsync( orders );
+			await this.FindMarketplaceIdsAsync( orders, token );
 
 			return orders;
 		}
 		
-		public IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber )
+		public IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber, CancellationToken token )
 		{
 			var orders = new List< ShipStationOrder >();
 			var processedOrderIds = new HashSet< long >();
@@ -264,7 +281,7 @@ namespace ShipStationAccess.V2
 
 					ActionPolicies.Get.Do( () =>
 					{
-						var ordersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint );
+						var ordersWithinPage = this._webRequestServices.GetResponse< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint, token, _timeouts[ ShipStationOperationEnum.ListOrders ] );
 						if( pagesCount == int.MaxValue )
 						{
 							pagesCount = ordersWithinPage.TotalPages;
@@ -285,29 +302,29 @@ namespace ShipStationAccess.V2
 			return orders;
 		}
 
-		public ShipStationOrder GetOrderById( string orderId )
+		public ShipStationOrder GetOrderById( string orderId, CancellationToken token )
 		{
 			ShipStationOrder order = null;
 			ActionPolicies.Get.Do( () =>
 			{
-				order = this._webRequestServices.GetResponse< ShipStationOrder >( ShipStationCommand.GetOrder, "/" + orderId );
+				order = this._webRequestServices.GetResponse< ShipStationOrder >( ShipStationCommand.GetOrder, "/" + orderId, token, _timeouts[ ShipStationOperationEnum.GetOrder ]);
 			} );
 
 			return order;
 		}
 
-		public async Task< ShipStationOrder > GetOrderByIdAsync( string orderId )
+		public async Task< ShipStationOrder > GetOrderByIdAsync( string orderId, CancellationToken token )
 		{
 			ShipStationOrder order = null;
 			await ActionPolicies.GetAsync.Do( async () =>
 			{
-				order = await this._webRequestServices.GetResponseAsync< ShipStationOrder >( ShipStationCommand.GetOrder, "/" + orderId );
+				order = await this._webRequestServices.GetResponseAsync< ShipStationOrder >( ShipStationCommand.GetOrder, "/" + orderId, token, _timeouts[ ShipStationOperationEnum.GetOrder ] );
 			} );
 
 			return order;
 		}
 
-		public async Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByIdAsync( string orderId )
+		public async Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByIdAsync( string orderId, CancellationToken token )
 		{
 			var orderShipments = new List< ShipStationOrderShipment >();
 
@@ -322,7 +339,7 @@ namespace ShipStationAccess.V2
 
 				await ActionPolicies.GetAsync.Do( async () =>
 				{
-					var orderShipmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderShipments >( ShipStationCommand.GetOrderShipments, orderShipmentsByPageEndPoint );
+					var orderShipmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderShipments >( ShipStationCommand.GetOrderShipments, orderShipmentsByPageEndPoint, token, _timeouts[ ShipStationOperationEnum.GetOrderShipments ] );
 				
 					++currentPage;
 					if ( pagesCount == int.MaxValue )
@@ -339,7 +356,7 @@ namespace ShipStationAccess.V2
 			return orderShipments;
 		}
 
-		public async Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByIdAsync( string orderId )
+		public async Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByIdAsync( string orderId, CancellationToken token )
 		{
 			var orderFulfillments = new List< ShipStationOrderFulfillment >();
 
@@ -354,7 +371,7 @@ namespace ShipStationAccess.V2
 
 				await ActionPolicies.GetAsync.Do( async () =>
 				{
-					var orderFulfillmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderFulfillments >( ShipStationCommand.GetOrderFulfillments, orderFulfillmentsByPageEndPoint );
+					var orderFulfillmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderFulfillments >( ShipStationCommand.GetOrderFulfillments, orderFulfillmentsByPageEndPoint, token, _timeouts[ ShipStationOperationEnum.GetOrderFulfillments ] );
 				
 					++currentPage;
 					if ( pagesCount == int.MaxValue )
@@ -373,7 +390,7 @@ namespace ShipStationAccess.V2
 		#endregion
 
 		#region Update Orders
-		public void UpdateOrder( ShipStationOrder order )
+		public void UpdateOrder( ShipStationOrder order, CancellationToken token )
 		{
 			if( !order.IsValid() )
 				return;
@@ -382,7 +399,7 @@ namespace ShipStationAccess.V2
 			{
 				try
 				{
-					this._webRequestServices.PostData( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() );
+					this._webRequestServices.PostData( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson(), token, _timeouts[ ShipStationOperationEnum.CreateOrder ] );
 				}
 				catch( WebException x )
 				{
@@ -396,7 +413,7 @@ namespace ShipStationAccess.V2
 			} );
 		}
 
-		public async Task UpdateOrderAsync( ShipStationOrder order )
+		public async Task UpdateOrderAsync( ShipStationOrder order, CancellationToken token )
 		{
 			if( !order.IsValid() )
 				return;
@@ -405,7 +422,7 @@ namespace ShipStationAccess.V2
 			{
 				try
 				{
-					await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson() );
+					await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson(), token, _timeouts[ ShipStationOperationEnum.CreateOrder ] );
 				}
 				catch( WebException x )
 				{
@@ -421,65 +438,65 @@ namespace ShipStationAccess.V2
 		#endregion
 
 		#region Update Order Items Warehouse Locations
-		public void UpdateOrderItemsWarehouseLocations( ShipStationWarehouseLocations warehouseLocations )
+		public void UpdateOrderItemsWarehouseLocations( ShipStationWarehouseLocations warehouseLocations, CancellationToken token )
 		{
 			foreach( var warehouseLocation in warehouseLocations.GetWarehouseLocationsToSend() )
 			{
-				this.UpdateOrderItemsWarehouseLocation( warehouseLocation );
+				this.UpdateOrderItemsWarehouseLocation( warehouseLocation, token );
 			}
 		}
 
-		public async Task UpdateOrderItemsWarehouseLocationsAsync( ShipStationWarehouseLocations warehouseLocations )
+		public async Task UpdateOrderItemsWarehouseLocationsAsync( ShipStationWarehouseLocations warehouseLocations, CancellationToken token )
 		{
 			foreach( var warehouseLocation in warehouseLocations.GetWarehouseLocationsToSend() )
 			{
-				await this.UpdateOrderItemsWarehouseLocationAsync( warehouseLocation );
+				await this.UpdateOrderItemsWarehouseLocationAsync( warehouseLocation, token );
 			}
 		}
 
-		public void UpdateOrderItemsWarehouseLocation( ShipStationWarehouseLocation warehouseLocation )
+		public void UpdateOrderItemsWarehouseLocation( ShipStationWarehouseLocation warehouseLocation, CancellationToken token )
 		{
 			var json = warehouseLocation.SerializeToJson();
 			ActionPolicies.Submit.Do( () =>
 			{
-				this._webRequestServices.PostData( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json );
+				this._webRequestServices.PostData( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json, token, _timeouts[ ShipStationOperationEnum.UpdateWarehouseLocation ] );
 			} );
 		}
 
-		public async Task UpdateOrderItemsWarehouseLocationAsync( ShipStationWarehouseLocation warehouseLocation )
+		public async Task UpdateOrderItemsWarehouseLocationAsync( ShipStationWarehouseLocation warehouseLocation, CancellationToken token )
 		{
 			var json = warehouseLocation.SerializeToJson();
 			await ActionPolicies.SubmitAsync.Do( async () =>
 			{
-				await this._webRequestServices.PostDataAsync( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json );
+				await this._webRequestServices.PostDataAsync( ShipStationCommand.UpdateOrderItemsWarehouseLocation, json, token, _timeouts[ ShipStationOperationEnum.UpdateWarehouseLocation ] );
 			} );
 		}
 		#endregion
 
 		#region Get Stores
-		public IEnumerable< ShipStationStore > GetStores()
+		public IEnumerable< ShipStationStore > GetStores( CancellationToken token )
 		{
 			var stores = new List< ShipStationStore >();
 			ActionPolicies.Submit.Do( () =>
 			{
-				stores = this._webRequestServices.GetResponse< List< ShipStationStore > >( ShipStationCommand.GetStores, ParamsBuilder.EmptyParams );
+				stores = this._webRequestServices.GetResponse< List< ShipStationStore > >( ShipStationCommand.GetStores, ParamsBuilder.EmptyParams, token, _timeouts[ ShipStationOperationEnum.GetStores ] );
 			} );
 			return stores;
 		}
 
-		public async Task< IEnumerable< ShipStationStore > > GetStoresAsync()
+		public async Task< IEnumerable< ShipStationStore > > GetStoresAsync( CancellationToken token )
 		{
 			var stores = new List< ShipStationStore >();
 			await ActionPolicies.SubmitAsync.Do( async () =>
 			{
-				stores = await this._webRequestServices.GetResponseAsync< List< ShipStationStore > >( ShipStationCommand.GetStores, ParamsBuilder.EmptyParams );
+				stores = await this._webRequestServices.GetResponseAsync< List< ShipStationStore > >( ShipStationCommand.GetStores, ParamsBuilder.EmptyParams, token, _timeouts[ ShipStationOperationEnum.GetStores ] );
 			} );
 			return stores;
 		}
 		#endregion
 
 		#region Register
-		public ShipStationRegisterResponse Register( ShipStationRegister register )
+		public ShipStationRegisterResponse Register( ShipStationRegister register, CancellationToken token )
 		{
 			ShipStationRegisterResponse response = null;
 			ActionPolicies.Submit.Do( () =>
@@ -487,7 +504,7 @@ namespace ShipStationAccess.V2
 				try
 				{
 					ShipStationLogger.Log.Info( "Try send register request. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
-					response = this._webRequestServices.PostDataAndGetResponseWithShipstationHeader< ShipStationRegisterResponse >( ShipStationCommand.Register, register.SerializeToJson(), true );
+					response = this._webRequestServices.PostDataAndGetResponseWithShipstationHeader< ShipStationRegisterResponse >( ShipStationCommand.Register, register.SerializeToJson(), token, true, _timeouts[ ShipStationOperationEnum.Register ] );
 					ShipStationLogger.Log.Info( "Try send register request is success. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
 				}
 				catch( Exception ex )
@@ -503,9 +520,9 @@ namespace ShipStationAccess.V2
 		#endregion
 
 		#region Misc
-		private void FindMarketplaceIds( IEnumerable< ShipStationOrder > orders )
+		private void FindMarketplaceIds( IEnumerable< ShipStationOrder > orders, CancellationToken token )
 		{
-			var stores = this.GetStores();
+			var stores = this.GetStores( token );
 
 			foreach( var order in orders )
 			{
@@ -518,9 +535,9 @@ namespace ShipStationAccess.V2
 			}
 		}
 
-		private async Task FindMarketplaceIdsAsync( IEnumerable< ShipStationOrder > orders )
+		private async Task FindMarketplaceIdsAsync( IEnumerable< ShipStationOrder > orders, CancellationToken token )
 		{
-			var stores = await this.GetStoresAsync();
+			var stores = await this.GetStoresAsync( token );
 
 			foreach( var order in orders )
 			{
