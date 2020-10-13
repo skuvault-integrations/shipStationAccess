@@ -10,7 +10,7 @@ namespace ShipStationAccessTests
 		[ Test ]
 		public void GivenSpecificTimeoutsAreNotSet_WhenGetTimeoutIsCalled_ThenDefaultTimeoutIsReturned()
 		{
-			var operationsTimeouts = new ShipStationOperationsTimeouts();
+			var operationsTimeouts = new ShipStationTimeouts();
 
 			operationsTimeouts[ ShipStationOperationEnum.ListOrders ].Should().Be( operationsTimeouts.DefaultOperationTimeout.TimeoutInMs );
 		}
@@ -18,7 +18,7 @@ namespace ShipStationAccessTests
 		[ Test ]
 		public void GivenOwnDefaultTimeoutValue_WhenGetTimeoutIsCalled_ThenOverridenDefaultTimeoutIsReturned()
 		{
-			var operationsTimeouts = new ShipStationOperationsTimeouts();
+			var operationsTimeouts = new ShipStationTimeouts();
 			var newDefaultTimeoutInMs = 10 * 60 * 1000;
 			operationsTimeouts.DefaultOperationTimeout = new ShipStationOperationTimeout( newDefaultTimeoutInMs );
 
@@ -28,7 +28,7 @@ namespace ShipStationAccessTests
 		[ Test ]
 		public void GivenListOrdersTimeoutIsSet_WhenGetTimeoutIsCalled_ThenSpecificTimeoutIsReturned()
 		{
-			var operationsTimeouts = new ShipStationOperationsTimeouts();
+			var operationsTimeouts = new ShipStationTimeouts();
 			var specificTimeoutInMs = 10 * 60 * 1000;
 			operationsTimeouts.Set( ShipStationOperationEnum.ListOrders, new ShipStationOperationTimeout( specificTimeoutInMs ) );
 
@@ -39,7 +39,7 @@ namespace ShipStationAccessTests
 		[ Test ]
 		public void GivenListOrdersTimeoutIsSetTwice_WhenGetTimeoutIsCalled_ThenSpecificTimeoutIsReturned()
 		{
-			var operationsTimeouts = new ShipStationOperationsTimeouts();
+			var operationsTimeouts = new ShipStationTimeouts();
 			var specificTimeoutInMs = 10 * 60 * 1000;
 			operationsTimeouts.Set( ShipStationOperationEnum.ListOrders, new ShipStationOperationTimeout( specificTimeoutInMs ) );
 			operationsTimeouts.Set( ShipStationOperationEnum.ListOrders, new ShipStationOperationTimeout( specificTimeoutInMs * 2 ) );

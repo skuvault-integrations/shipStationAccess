@@ -6,7 +6,7 @@ namespace ShipStationAccess
 {
 	public interface IShipStationFactory
 	{
-		IShipStationService CreateServiceV2( ShipStationCredentials credentials, ShipStationOperationsTimeouts operationsTimeouts );
+		IShipStationService CreateServiceV2( ShipStationCredentials credentials, ShipStationTimeouts operationsTimeouts );
 		IShipStationService CreateServiceV2( ShipStationCredentials credentials );
 	}
 
@@ -21,10 +21,10 @@ namespace ShipStationAccess
 
 		public IShipStationService CreateServiceV2( ShipStationCredentials credentials )
 		{
-			return CreateServiceV2( credentials, new ShipStationOperationsTimeouts() );
+			return CreateServiceV2( credentials, new ShipStationTimeouts() );
 		}
 
-		public IShipStationService CreateServiceV2( ShipStationCredentials credentials, ShipStationOperationsTimeouts operationsTimeouts )
+		public IShipStationService CreateServiceV2( ShipStationCredentials credentials, ShipStationTimeouts operationsTimeouts )
 		{
 			Condition.Requires( credentials, "credentials" ).IsNotNull();
 

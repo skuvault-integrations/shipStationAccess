@@ -46,7 +46,7 @@ namespace ShipStationAccessTests.Orders
 		public void GetOrders()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
@@ -55,7 +55,7 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrdersAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow, CancellationToken.None, getShipmentsAndFulfillments: true );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None, getShipmentsAndFulfillments: true );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
@@ -63,7 +63,7 @@ namespace ShipStationAccessTests.Orders
 		[ Test ]
 		public void GivenTooSmallTimeout_WhenGetOrdersIsCalled_ThenExceptionIsReturned()
 		{
-			var timeouts = new ShipStationOperationsTimeouts();
+			var timeouts = new ShipStationTimeouts();
 			var tinyTimeout = new ShipStationOperationTimeout( 10 );
 			timeouts.Set( ShipStationOperationEnum.ListOrders, tinyTimeout );
 			timeouts.Set( ShipStationOperationEnum.GetOrderShipments, tinyTimeout );
@@ -71,18 +71,17 @@ namespace ShipStationAccessTests.Orders
 
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials, timeouts );
 
-			var ex = Assert.Throws< WebException >( () => {
+			var ex = Assert.Throws< TaskCanceledException >( () => {
 				var orders = service.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
 			} );
 			
 			ex.Should().NotBeNull();
-			ex.Status.Should().Be( WebExceptionStatus.Timeout );
 		}
 
 		[ Test ]
 		public void GivenTooSmallTimeout_WhenGetOrdersAsyncIsCalled_ThenExceptionIsReturned()
 		{
-			var timeouts = new ShipStationOperationsTimeouts();
+			var timeouts = new ShipStationTimeouts();
 			var tinyTimeout = new ShipStationOperationTimeout( 10 );
 			timeouts.Set( ShipStationOperationEnum.ListOrders, tinyTimeout );
 			timeouts.Set( ShipStationOperationEnum.GetOrderShipments, tinyTimeout );
@@ -90,19 +89,18 @@ namespace ShipStationAccessTests.Orders
 
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials, timeouts );
 
-			var ex = Assert.Throws< WebException >( async () => {
+			var ex = Assert.Throws< TaskCanceledException >( async () => {
 				var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
 			} );
 			
 			ex.Should().NotBeNull();
-			ex.Status.Should().Be( WebExceptionStatus.Timeout );
 		}
 
 		[ Test ]
 		public async Task GetOrdersWithoutShipmentsAndFulfillmentsAsync()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None, getShipmentsAndFulfillments: false );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None, getShipmentsAndFulfillments: false );
 
 			orders.Count().Should().BeGreaterThan( 0 );
 			orders.Any( o => o.Shipments != null ).Should().Be( false );

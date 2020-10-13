@@ -28,8 +28,8 @@ namespace ShipStationAccess.V2.Models
 		}
 	}
 
-      public class ShipStationOperationsTimeouts
-      {
+	public class ShipStationTimeouts
+	{
 		public const int DefaultTimeoutInMs = 5 * 60 * 1000;
 		private Dictionary< ShipStationOperationEnum, ShipStationOperationTimeout > _timeouts;
 
@@ -56,10 +56,10 @@ namespace ShipStationAccess.V2.Models
 			_timeouts.Add( operation, timeout );
 		}
 
-            public ShipStationOperationsTimeouts()
-            {
+		public ShipStationTimeouts()
+		{
 			_timeouts = new Dictionary< ShipStationOperationEnum, ShipStationOperationTimeout >();
 			this.DefaultOperationTimeout = new ShipStationOperationTimeout( DefaultTimeoutInMs );
-            }
-      }
+		}
+	}
 }

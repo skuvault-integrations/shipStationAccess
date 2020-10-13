@@ -22,21 +22,21 @@ namespace ShipStationAccess.V2
 	public sealed class ShipStationService: IShipStationService
 	{
 		private readonly WebRequestServices _webRequestServices;
-		private readonly ShipStationOperationsTimeouts _timeouts;
+		private readonly ShipStationTimeouts _timeouts;
 
 		// lowered max limit for less order loss on Shipsation API's internal errors
 		private const int RequestMaxLimit = 20;
 
 		private DateTime _lastActivityTime;
 
-		public ShipStationService( ShipStationCredentials credentials, ShipStationOperationsTimeouts timeouts )
+		public ShipStationService( ShipStationCredentials credentials, ShipStationTimeouts timeouts )
 		{
 			this._webRequestServices = new WebRequestServices( credentials );
 			this._timeouts = timeouts;
 			_lastActivityTime = DateTime.UtcNow;
 		}
 
-		public ShipStationService( ShipStationCredentials credentials ) : this( credentials, new ShipStationOperationsTimeouts() ) { }
+		public ShipStationService( ShipStationCredentials credentials ) : this( credentials, new ShipStationTimeouts() ) { }
 
 		public DateTime LastActivityTime
 		{

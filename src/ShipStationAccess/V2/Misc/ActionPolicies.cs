@@ -18,6 +18,8 @@ namespace ShipStationAccess.V2.Misc
 		{
 			if( x is ShipStationLabelException )
 				return false;
+			else if ( x is TaskCanceledException )
+				return false;
 			var webX = x as WebException;
 			if( webX == null )
 				return true;
