@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CSharp.RuntimeBinder;
 using Newtonsoft.Json;
+using ShipStationAccess.V2.Exceptions;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
@@ -22,6 +23,7 @@ namespace ShipStationAccess.V2.Services
 		public DateTime? LastNetworkActivityTime { get; private set; }
 
 		public const int TooManyRequestsErrorCode = 429;
+		public const int DefaultThrottlingWaitTimeInSeconds = 60;
 
 		public string GetApiKey()
 		{
@@ -81,7 +83,7 @@ namespace ShipStationAccess.V2.Services
 		public async Task< T > GetResponseAsync< T >( ShipStationCommand command, string commandParams, CancellationToken token, int? operationTimeout = null )
 		{
 			var url = string.Concat( this._credentials.Host, command.Command, commandParams );
-			var response = await GetDataAsync( url, token, operationTimeout ).ConfigureAwait( false );
+			var response = await GetRawResponseAsync( url, token, operationTimeout ).ConfigureAwait( false );
 			if ( !string.IsNullOrWhiteSpace( response ) )
 				return this.ParseResponse< T >( response );
 
@@ -111,7 +113,7 @@ namespace ShipStationAccess.V2.Services
 		public Task PostDataAsync( ShipStationCommand command, string jsonContent, CancellationToken token, int? operationTimeout = null )
 		{
 			var url = string.Concat( this._credentials.Host, command.Command );
-			return PostDataAsync( url, jsonContent, token, false, operationTimeout );
+			return PostRawDataWithRetryAsync( url, jsonContent, token, false, operationTimeout );
 		}
 
 		/// <summary>
@@ -154,7 +156,7 @@ namespace ShipStationAccess.V2.Services
 		{
 			var url = string.Concat( this._credentials.Host, command.Command );
 			
-			var response = await PostDataAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout );
+			var response = await PostRawDataWithRetryAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout );
 			if ( !string.IsNullOrWhiteSpace( response ) )
 				return this.ParseResponse< T >( response );
 
@@ -178,7 +180,7 @@ namespace ShipStationAccess.V2.Services
 			while( numberRequest < 20 )
 			{
 				numberRequest++;
-				var data = PostDataAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout, true ).Result;
+				var data = PostRawDataWithRetryAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout, useShipStationPartnerHeader: true ).Result;
 				if ( !string.IsNullOrWhiteSpace( data ) )
 					return this.ParseResponse< T >( data );
 			}
@@ -194,69 +196,24 @@ namespace ShipStationAccess.V2.Services
 		/// <param name="token"></param>
 		/// <param name="operationTimeout"></param>
 		/// <returns></returns>
-		private async Task< string > GetDataAsync( string url, CancellationToken token, int? operationTimeout = null )
+		private async Task< string > GetRawResponseAsync( string url, CancellationToken token, int? operationTimeout = null )
 		{
-			while( true )
+			using( var cts = CancellationTokenSource.CreateLinkedTokenSource( token ) )
 			{
-				var resetDelay = 0;
-				try
-				{
-					RefreshLastNetworkActivityTime();
+				if ( operationTimeout != null )
+					cts.CancelAfter( operationTimeout.Value );
 
-					using( var cts = CancellationTokenSource.CreateLinkedTokenSource( token ) )
-					{
-						if ( operationTimeout != null )
-							cts.CancelAfter( operationTimeout.Value );
+				RefreshLastNetworkActivityTime();
 
-						var response = await this.HttpClient.GetAsync( url, cts.Token ).ConfigureAwait( false );
-						var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
+				var response = await this.HttpClient.GetAsync( url, cts.Token ).ConfigureAwait( false );
+				var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
 
-						RefreshLastNetworkActivityTime();
+				RefreshLastNetworkActivityTime();
+				ThrowIfError( url, response, responseContent );
 
-						var rateLimitHeaderValue = GetRateLimitHeaderValue( response );
+				ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}': {response}", this._credentials.ApiKey, url, responseContent );
 
-						var shipStationResponse = ProcessResponse( url, responseContent, rateLimitHeaderValue );
-						if( !shipStationResponse.IsThrottled )
-							return shipStationResponse.Data;
-
-						resetDelay = shipStationResponse.ResetInSeconds;
-					}
-				}
-				catch( HttpRequestException ex )
-				{
-					RefreshLastNetworkActivityTime();
-
-					var isRequestThrottled = false;
-					if ( ex.InnerException != null && ex.InnerException is WebException )
-					{
-						var webEx = (WebException)ex.InnerException;
-
-						var response = webEx.Response;
-						if ( response != null )
-						{
-							var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
-							switch( statusCode )
-							{
-								case (int)HttpStatusCode.NotFound:
-									if( url.Contains( ShipStationCommand.GetOrder.Command ) )
-										return null;
-
-									throw;
-								case TooManyRequestsErrorCode:
-									resetDelay = GetLimitReset( response );
-									isRequestThrottled = true;
-									break;
-								default:
-									throw;
-							}
-						}
-					}
-
-					if ( !isRequestThrottled )
-						throw;
-				}
-
-				await this.CreateDelay( resetDelay ).ConfigureAwait( false );
+				return responseContent;
 			}
 		}
 
@@ -270,76 +227,86 @@ namespace ShipStationAccess.V2.Services
 		/// <param name="shouldGetExceptionMessage"></param>
 		/// <param name="operationTimeout"></param>
 		/// <returns></returns>
-		private async Task< string > PostDataAsync( string url, string payload, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null, bool useShipStationPartnerHeader = false )
+		private async Task< string > PostRawDataWithRetryAsync( string url, string payload, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null, bool useShipStationPartnerHeader = false )
 		{
-			while( true )
-			{
-				this.LogPostInfo( this._credentials.ApiKey, url, payload );
-				var resetDelay = 0;
-				try
-				{
-					using( var cts = CancellationTokenSource.CreateLinkedTokenSource( token ) )
-					{
-						RefreshLastNetworkActivityTime();
+			this.LogPostInfo( this._credentials.ApiKey, url, payload );
+			RefreshLastNetworkActivityTime();
 						
-						if ( operationTimeout != null )
-							cts.CancelAfter( operationTimeout.Value * 1000 );
-
-						if ( useShipStationPartnerHeader )
-							SetAuthorizationHeader( true );
-
-						var requestContent = new StringContent( payload, Encoding.UTF8, "application/json" );
-
-						var responseMessage = await this.HttpClient.PostAsync( url, requestContent, cts.Token ).ConfigureAwait( false );
-						var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait( false );
-						var rateLimitHeaderValue = GetRateLimitHeaderValue( responseMessage );
-						RefreshLastNetworkActivityTime();
-
-						var shipStationResponse = this.ProcessResponse( url, responseContent, rateLimitHeaderValue );
-						if( !shipStationResponse.IsThrottled )
-						{
-							this.LogUpdateInfo( this._credentials.ApiKey, url, responseMessage.StatusCode, payload );
-							return shipStationResponse.Data;
-						}
-
-						resetDelay = shipStationResponse.ResetInSeconds;
-					}
-				}
-				catch( HttpRequestException e )
+			try
+			{
+				using( var cts = CancellationTokenSource.CreateLinkedTokenSource( token ) )
 				{
+					if ( operationTimeout != null )
+						cts.CancelAfter( operationTimeout.Value * 1000 );
+
+					if ( useShipStationPartnerHeader )
+						SetAuthorizationHeader( true );
+
+					var requestContent = new StringContent( payload, Encoding.UTF8, "application/json" );
+
+					var responseMessage = await this.HttpClient.PostAsync( url, requestContent, cts.Token ).ConfigureAwait( false );
+					var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait( false );
+
 					RefreshLastNetworkActivityTime();
+					ThrowIfError( url, responseMessage, responseContent );
 
-					var isRequestThrottled = false;
-
-					if ( e.InnerException != null && e.InnerException is WebException )
-					{
-						var ex = (WebException)e.InnerException;
-						if ( ex.Response != null )
-						{
-							var responseString = ex.Response.GetResponseString();
-							this.LogPostError( this._credentials.ApiKey, url, ex.Response.GetHttpStatusCode(), payload, responseString );
-							var response = ex.Response;
-							var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
-
-							if ( statusCode == TooManyRequestsErrorCode )
-							{
-								resetDelay = GetLimitReset( response );
-								isRequestThrottled = true;
-							}
-							else
-							{
-								if( shouldGetExceptionMessage )
-									throw new Exception( this.GetExceptionMessageFromResponse( ex, responseString ), ex );
-							}
-						}
-					}
-					
-					if ( !isRequestThrottled )
-						throw;
+					this.LogUpdateInfo( this._credentials.ApiKey, url, responseMessage.StatusCode, payload );
+					return responseContent;
+				}
+			}
+			catch( Exception ex )
+			{
+				var webException = WebExtensions.GetWebException( ex );
+				if ( webException != null )
+				{
+					var serverResponseError = webException.Response?.GetResponseString() ?? string.Empty;
+					this.LogPostError( this._credentials.ApiKey, url, webException.Response?.GetHttpStatusCode() ?? HttpStatusCode.InternalServerError, payload, serverResponseError );
+					if( shouldGetExceptionMessage )
+						throw new Exception( this.GetExceptionMessageFromResponse( webException, serverResponseError ), ex );
 				}
 
-				await this.CreateDelay( resetDelay ).ConfigureAwait( false );
+				throw;
 			}
+		}
+
+		private void ThrowIfError( string url, HttpResponseMessage responseMessage, string responseContent )
+		{
+			var serverStatusCode = responseMessage.StatusCode;
+
+			if ( serverStatusCode == HttpStatusCode.NotFound
+				&& url.Contains( ShipStationCommand.GetOrder.Command ) )
+				return;
+
+			if ( serverStatusCode == HttpStatusCode.Unauthorized )
+				throw new ShipStationUnauthorizedException();
+
+			if ( IsRequestThrottled( responseMessage, responseContent, out int rateResetInSeconds ) )
+			{
+				ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}':\n{resetInSeconds} - {isThrottled}\n{response}",
+									this._credentials.ApiKey, url, rateResetInSeconds, true, responseContent );
+				throw new ShipStationThrottleException( rateResetInSeconds );
+			}
+		}
+
+		private bool IsRequestThrottled( HttpResponseMessage responseMessage, string responseContent, out int rateResetInSeconds )
+		{
+			rateResetInSeconds = DefaultThrottlingWaitTimeInSeconds;
+			bool isThrottled = (int)responseMessage.StatusCode == TooManyRequestsErrorCode
+							|| ( responseContent != null && responseContent.Contains( "\"message\": \"Too Many Requests\"" ) );
+
+			if ( !isThrottled )
+				return false;
+
+			if ( responseMessage.Headers.TryGetValues( "X-Rate-Limit-Reset", out IEnumerable< string > rateLimitHeaderValues ) )
+			{
+				var rateLimitHeaderValue = rateLimitHeaderValues.FirstOrDefault();
+				if ( !string.IsNullOrWhiteSpace( rateLimitHeaderValue ) )
+				{
+					int.TryParse( rateLimitHeaderValue, out rateResetInSeconds );
+				}
+			}
+				
+			return true;
 		}
 
 		private string GetExceptionMessageFromResponse( WebException ex, string responseString )
@@ -396,60 +363,6 @@ namespace ShipStationAccess.V2.Services
 				result = jsonData.DeserializeJson< T >();
 
 			return result;
-		}
-
-		private Task CreateDelay( int seconds )
-		{
-			return Task.Delay( seconds * 1000 );
-		}
-
-		private ShipStationResponse ProcessResponse( string url, string jsonResponse, string rateLimitHeaderValue )
-		{
-			var resetInSeconds = GetLimitReset( rateLimitHeaderValue );
-			var isThrottled = jsonResponse.Contains( "\"message\": \"Too Many Requests\"" );
-
-			ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}':\n{resetInSeconds} - {isThrottled}\n{response}",
-				this._credentials.ApiKey, url, resetInSeconds, isThrottled, jsonResponse );
-
-			return new ShipStationResponse
-			{
-				Data = jsonResponse, 
-				ResetInSeconds = resetInSeconds,
-				IsThrottled = isThrottled
-			};
-		}
-
-		private static int GetLimitReset( WebResponse response )
-		{
-			var resetInSecondsString = response.Headers.Get( "X-Rate-Limit-Reset" );
-			var resetInSeconds = 0;
-			if( !string.IsNullOrWhiteSpace( resetInSecondsString ) )
-				int.TryParse( resetInSecondsString, out resetInSeconds );
-			return resetInSeconds;
-		}
-
-		private static string GetRateLimitHeaderValue( HttpResponseMessage response )
-		{
-			var rateLimitHeaderValue = string.Empty;
-			if ( response.Headers.TryGetValues( "X-Rate-Limit-Reset", out IEnumerable<string> rateLimitHeaderValues ) )
-				rateLimitHeaderValue = rateLimitHeaderValues.FirstOrDefault();
-
-			return rateLimitHeaderValue;
-		}
-
-		private static int GetLimitReset( string rateLimitHeaderValue )
-		{
-			var resetInSeconds = 0;
-			if( !string.IsNullOrWhiteSpace( rateLimitHeaderValue ) )
-				int.TryParse( rateLimitHeaderValue, out resetInSeconds );
-			return resetInSeconds;
-		}
-
-		private class ShipStationResponse
-		{
-			internal string Data;
-			internal int ResetInSeconds;
-			internal bool IsThrottled;
 		}
 
 		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent )

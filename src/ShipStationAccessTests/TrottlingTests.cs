@@ -49,7 +49,7 @@ namespace ShipStationAccessTests
 
 			var tasks = new List< Task >();
 
-			foreach( var i in Enumerable.Range( 0, 500 ) )
+			foreach( var i in Enumerable.Range( 0, 20 ) )
 			{
 				tasks.Add( service.GetOrdersAsync( endDate.AddDays( -1 ), endDate, CancellationToken.None ) );
 			}

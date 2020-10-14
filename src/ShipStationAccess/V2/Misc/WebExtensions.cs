@@ -6,6 +6,30 @@ namespace ShipStationAccess.V2.Misc
 {
 	public static class WebExtensions
 	{
+		public static WebException GetWebException( Exception ex )
+		{
+			if ( ex is WebException )
+				return (WebException)ex;
+
+			if ( ex is AggregateException )
+			{
+				var aggregateException = (AggregateException)ex;
+				foreach( var innerException in aggregateException.InnerExceptions )
+				{
+					var webEx = GetWebException( innerException );
+					if ( webEx != null )
+						return webEx;
+				}
+			}
+
+			if ( ex.InnerException != null )
+			{
+				return GetWebException( ex.InnerException );
+			}
+
+			return null;
+		}
+
 		public static HttpStatusCode GetHttpStatusCode( this WebResponse response )
 		{
 			return ( ( HttpWebResponse )response ).StatusCode;

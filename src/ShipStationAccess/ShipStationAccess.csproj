@@ -83,8 +83,11 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShipStationFactory.cs" />
+    <Compile Include="V2\Exceptions\ShipStationUnRecoverableException.cs" />
     <Compile Include="V2\Exceptions\ShipStationRegisterException.cs" />
     <Compile Include="V2\Exceptions\ShipStationLabelException.cs" />
+    <Compile Include="V2\Exceptions\ShipStationThrottleException.cs" />
+    <Compile Include="V2\Exceptions\ShipStationUnauthorizedException.cs" />
     <Compile Include="V2\IShipStationService.cs" />
     <Compile Include="V2\Misc\ActionPolicies.cs" />
     <Compile Include="V2\Misc\ShipstationLogger.cs" />
