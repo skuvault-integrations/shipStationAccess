@@ -45,13 +45,13 @@ namespace ShipStationAccessTests
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
 			var endDate = DateTime.UtcNow; //new DateTime( 2015, 06, 01, 22, 45, 00, DateTimeKind.Utc );
 
-			var orders = service.GetOrders( endDate.AddDays( -1 ), endDate, CancellationToken.None );
+			var orders = service.GetOrders( endDate.AddDays( -5 ), endDate, CancellationToken.None );
 
 			var tasks = new List< Task >();
 
 			foreach( var i in Enumerable.Range( 0, 20 ) )
 			{
-				tasks.Add( service.GetOrdersAsync( endDate.AddDays( -1 ), endDate, CancellationToken.None ) );
+				tasks.Add( service.GetOrdersAsync( endDate.AddDays( -5 ), endDate, CancellationToken.None ) );
 			}
 
 			await Task.WhenAll( tasks );

@@ -24,6 +24,7 @@ namespace ShipStationAccess.V2.Services
 
 		public const int TooManyRequestsErrorCode = 429;
 		public const int DefaultThrottlingWaitTimeInSeconds = 60;
+		public const int MaxHttpRequestTimeoutInMinutes = 30;
 
 		public string GetApiKey()
 		{
@@ -35,6 +36,7 @@ namespace ShipStationAccess.V2.Services
 			this._credentials = credentials;
 			
 			this.HttpClient = new HttpClient();
+			this.HttpClient.Timeout = TimeSpan.FromMinutes( MaxHttpRequestTimeoutInMinutes );
 			SetAuthorizationHeader();
 
 			this.InitSecurityProtocol();
@@ -113,7 +115,7 @@ namespace ShipStationAccess.V2.Services
 		public Task PostDataAsync( ShipStationCommand command, string jsonContent, CancellationToken token, int? operationTimeout = null )
 		{
 			var url = string.Concat( this._credentials.Host, command.Command );
-			return PostRawDataWithRetryAsync( url, jsonContent, token, false, operationTimeout );
+			return PostRawDataAsync( url, jsonContent, token, false, operationTimeout );
 		}
 
 		/// <summary>
@@ -156,7 +158,7 @@ namespace ShipStationAccess.V2.Services
 		{
 			var url = string.Concat( this._credentials.Host, command.Command );
 			
-			var response = await PostRawDataWithRetryAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout );
+			var response = await PostRawDataAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout );
 			if ( !string.IsNullOrWhiteSpace( response ) )
 				return this.ParseResponse< T >( response );
 
@@ -180,7 +182,7 @@ namespace ShipStationAccess.V2.Services
 			while( numberRequest < 20 )
 			{
 				numberRequest++;
-				var data = PostRawDataWithRetryAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout, useShipStationPartnerHeader: true ).Result;
+				var data = PostRawDataAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout, useShipStationPartnerHeader: true ).Result;
 				if ( !string.IsNullOrWhiteSpace( data ) )
 					return this.ParseResponse< T >( data );
 			}
@@ -227,7 +229,7 @@ namespace ShipStationAccess.V2.Services
 		/// <param name="shouldGetExceptionMessage"></param>
 		/// <param name="operationTimeout"></param>
 		/// <returns></returns>
-		private async Task< string > PostRawDataWithRetryAsync( string url, string payload, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null, bool useShipStationPartnerHeader = false )
+		private async Task< string > PostRawDataAsync( string url, string payload, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null, bool useShipStationPartnerHeader = false )
 		{
 			this.LogPostInfo( this._credentials.ApiKey, url, payload );
 			RefreshLastNetworkActivityTime();

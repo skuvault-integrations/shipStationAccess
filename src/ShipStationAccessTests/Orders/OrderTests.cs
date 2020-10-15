@@ -91,6 +91,17 @@ namespace ShipStationAccessTests.Orders
 			var order = await this._shipStationService.GetOrderByIdAsync( existingOrderId, CancellationToken.None );
 			order.Should().NotBeNull();
 		}
+		
+		[ Test ]
+		public async Task WhenGetOrdersAsyncIsCalled_ThenModifiedLastActivityTimeIsExpected()
+		{
+			var lastActivityTimeBeforeMakingAnyRequest = this._shipStationService.LastActivityTime;
+			
+			var orders = await this._shipStationService.GetOrdersAsync( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None, getShipmentsAndFulfillments: true );
+
+			var lastActivityTimeAfterMakingRequests = this._shipStationService.LastActivityTime;
+			lastActivityTimeAfterMakingRequests.Should().BeAfter( lastActivityTimeBeforeMakingAnyRequest );
+		}
 
 		[ Test ]
 		public void GetTags()
