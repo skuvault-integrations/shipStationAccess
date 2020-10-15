@@ -437,7 +437,7 @@ namespace ShipStationAccess.V2
 			{
 				try
 				{
-					this._webRequestServices.PostData( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson(), token, _timeouts[ ShipStationOperationEnum.CreateOrder ] );
+					this._webRequestServices.PostData( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson(), token, _timeouts[ ShipStationOperationEnum.CreateUpdateOrder ] );
 				}
 				catch( WebException x )
 				{
@@ -460,7 +460,7 @@ namespace ShipStationAccess.V2
 			{
 				try
 				{
-					await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson(), token, _timeouts[ ShipStationOperationEnum.CreateOrder ] );
+					await this._webRequestServices.PostDataAsync( ShipStationCommand.CreateUpdateOrder, order.SerializeToJson(), token, _timeouts[ ShipStationOperationEnum.CreateUpdateOrder ] );
 				}
 				catch( WebException x )
 				{

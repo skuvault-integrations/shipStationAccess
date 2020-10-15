@@ -22,7 +22,7 @@ namespace ShipStationAccessTests
 			var newDefaultTimeoutInMs = 10 * 60 * 1000;
 			operationsTimeouts.DefaultOperationTimeout = new ShipStationOperationTimeout( newDefaultTimeoutInMs );
 
-			operationsTimeouts[ ShipStationOperationEnum.CreateOrder ].Should().Be( newDefaultTimeoutInMs );
+			operationsTimeouts[ ShipStationOperationEnum.CreateUpdateOrder ].Should().Be( newDefaultTimeoutInMs );
 		}
 
 		[ Test ]
@@ -33,7 +33,7 @@ namespace ShipStationAccessTests
 			operationsTimeouts.Set( ShipStationOperationEnum.ListOrders, new ShipStationOperationTimeout( specificTimeoutInMs ) );
 
 			operationsTimeouts[ ShipStationOperationEnum.ListOrders ].Should().Be( specificTimeoutInMs );
-			operationsTimeouts[ ShipStationOperationEnum.CreateOrder ].Should().Be( operationsTimeouts.DefaultOperationTimeout.TimeoutInMs );
+			operationsTimeouts[ ShipStationOperationEnum.CreateUpdateOrder ].Should().Be( operationsTimeouts.DefaultOperationTimeout.TimeoutInMs );
 		}
 
 		[ Test ]

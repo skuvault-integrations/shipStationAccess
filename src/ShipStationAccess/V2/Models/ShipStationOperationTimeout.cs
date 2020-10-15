@@ -9,7 +9,7 @@ namespace ShipStationAccess.V2.Models
 		GetOrder,
 		GetOrderShipments,
 		GetOrderFulfillments,
-		CreateOrder,
+		CreateUpdateOrder,
 		UpdateWarehouseLocation,
 		GetStores,
 		GetTags,
