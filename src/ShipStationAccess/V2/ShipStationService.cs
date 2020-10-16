@@ -27,13 +27,10 @@ namespace ShipStationAccess.V2
 		// lowered max limit for less order loss on Shipsation API's internal errors
 		private const int RequestMaxLimit = 20;
 
-		private DateTime _lastActivityTime;
-
 		public ShipStationService( ShipStationCredentials credentials, ShipStationTimeouts timeouts )
 		{
 			this._webRequestServices = new WebRequestServices( credentials );
 			this._timeouts = timeouts;
-			_lastActivityTime = DateTime.UtcNow;
 		}
 
 		public ShipStationService( ShipStationCredentials credentials ) : this( credentials, new ShipStationTimeouts() ) { }
