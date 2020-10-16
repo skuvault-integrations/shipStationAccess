@@ -213,7 +213,7 @@ namespace ShipStationAccess.V2.Services
 				RefreshLastNetworkActivityTime();
 				ThrowIfError( url, response, responseContent );
 
-				ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}': {response}", this._credentials.ApiKey, url, responseContent );
+				ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}' with timeout '{operationTimeout}': {response}", this._credentials.ApiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, responseContent );
 
 				return responseContent;
 			}
@@ -231,7 +231,7 @@ namespace ShipStationAccess.V2.Services
 		/// <returns></returns>
 		private async Task< string > PostRawDataAsync( string url, string payload, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null, bool useShipStationPartnerHeader = false )
 		{
-			this.LogPostInfo( this._credentials.ApiKey, url, payload );
+			this.LogPostInfo( this._credentials.ApiKey, url, payload, operationTimeout );
 			RefreshLastNetworkActivityTime();
 						
 			try
@@ -252,7 +252,7 @@ namespace ShipStationAccess.V2.Services
 					RefreshLastNetworkActivityTime();
 					ThrowIfError( url, responseMessage, responseContent );
 
-					this.LogUpdateInfo( this._credentials.ApiKey, url, responseMessage.StatusCode, payload );
+					this.LogUpdateInfo( this._credentials.ApiKey, url, responseMessage.StatusCode, payload, operationTimeout );
 					return responseContent;
 				}
 			}
@@ -262,7 +262,7 @@ namespace ShipStationAccess.V2.Services
 				if ( webException != null )
 				{
 					var serverResponseError = webException.Response?.GetResponseString() ?? string.Empty;
-					this.LogPostError( this._credentials.ApiKey, url, webException.Response?.GetHttpStatusCode() ?? HttpStatusCode.InternalServerError, payload, serverResponseError );
+					this.LogPostError( this._credentials.ApiKey, url, webException.Response?.GetHttpStatusCode() ?? HttpStatusCode.InternalServerError, payload, serverResponseError, operationTimeout );
 					if( shouldGetExceptionMessage )
 						throw new Exception( this.GetExceptionMessageFromResponse( webException, serverResponseError ), ex );
 				}
@@ -367,14 +367,14 @@ namespace ShipStationAccess.V2.Services
 			return result;
 		}
 
-		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent )
+		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, int? operationTimeout )
 		{
-			ShipStationLogger.Log.Info( "[shipstation]\tPOSTing call for the apiKey '{apiKey}' and url '{url}' has been completed with code '{code}'.\n{content}", apiKey, url, Convert.ToInt32( statusCode ), jsonContent );
+			ShipStationLogger.Log.Info( "[shipstation]\tPOSTing call for the apiKey '{apiKey}' and url '{url}' with timeout '{operationTimeout}' has been completed with code '{code}'.\n{content}", apiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, Convert.ToInt32( statusCode ), jsonContent );
 		}
 
-		private void LogPostInfo( string apiKey, string url, string jsonContent )
+		private void LogPostInfo( string apiKey, string url, string jsonContent, int? operationTimeout )
 		{
-			ShipStationLogger.Log.Info( "[shipstation]\tPOSTed data for the apiKey '{apiKey}' and url '{url}':\n{jsonContent}", apiKey, url, jsonContent );
+			ShipStationLogger.Log.Info( "[shipstation]\tPOSTed data for the apiKey '{apiKey}' and url '{url}' with timeout '{operationTimeout}':\n{jsonContent}", apiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, jsonContent );
 		}
 
 		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, WebException x )
@@ -382,9 +382,9 @@ namespace ShipStationAccess.V2.Services
 			ShipStationLogger.Log.Error( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, x.Response.GetResponseString(), Convert.ToInt32( statusCode ), jsonContent );
 		}
 
-		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, string responseString )
+		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, string responseString, int? operationTimeout )
 		{
-			ShipStationLogger.Log.Error( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, responseString, Convert.ToInt32( statusCode ), jsonContent );
+			ShipStationLogger.Log.Error( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', timeout '{operationTimeout}', code '{message}' and response '{code}':\n{content}", apiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, responseString, Convert.ToInt32( statusCode ), jsonContent );
 		}
 
 		private void RefreshLastNetworkActivityTime()
