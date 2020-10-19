@@ -2,7 +2,7 @@
 
 namespace ShipStationAccess.V2.Exceptions
 {
-	public class ShipStationUnauthorizedException : ShipStationUnRecoverableException
+	public class ShipStationUnauthorizedException : ShipStationUnrecoverableException
 	{
 		public ShipStationUnauthorizedException() { }
 	}

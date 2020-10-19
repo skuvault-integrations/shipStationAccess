@@ -22,7 +22,7 @@ namespace ShipStationAccess.V2.Misc
 		/// </summary>
 		private static readonly ExceptionHandler _exceptionHandler = delegate( Exception x )
 		{
-			if( x is ShipStationUnRecoverableException
+			if( x is ShipStationUnrecoverableException
 				|| x is TaskCanceledException )
 				return false;
 

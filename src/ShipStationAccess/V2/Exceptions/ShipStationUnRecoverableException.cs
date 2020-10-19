@@ -2,10 +2,10 @@
 
 namespace ShipStationAccess.V2.Exceptions
 {
-	public class ShipStationUnRecoverableException : Exception
+	public class ShipStationUnrecoverableException : Exception
 	{
-		public ShipStationUnRecoverableException() { }
-		public ShipStationUnRecoverableException( string message ) : base( message ) { }
-		public ShipStationUnRecoverableException( string message, Exception innerException ) : base( message, innerException) { }
+		public ShipStationUnrecoverableException() { }
+		public ShipStationUnrecoverableException( string message ) : base( message ) { }
+		public ShipStationUnrecoverableException( string message, Exception innerException ) : base( message, innerException) { }
 	}
 }

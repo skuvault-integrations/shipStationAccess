@@ -59,18 +59,7 @@ namespace ShipStationAccess.V2.Services
 		/// <returns></returns>
 		public T GetResponse< T >( ShipStationCommand command, string commandParams, CancellationToken token, int? operationTimeout = null )
 		{
-			T result = default( T );
-
-			try
-			{
-				result = GetResponseAsync< T >( command, commandParams, token, operationTimeout ).Result;
-			}
-			catch( AggregateException ex )
-			{
-				throw ex.InnerException;
-			}
-
-			return result;
+			return GetResponseAsync< T >( command, commandParams, token, operationTimeout ).GetAwaiter().GetResult();
 		}
 
 		/// <summary>
@@ -130,18 +119,7 @@ namespace ShipStationAccess.V2.Services
 		/// <returns></returns>
 		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null )
 		{
-			T result = default( T );
-
-			try
-			{
-				result = PostDataAndGetResponseAsync< T >( command, jsonContent, token, shouldGetExceptionMessage, operationTimeout ).Result;
-			}
-			catch( AggregateException ex )
-			{
-				throw ex.InnerException;
-			}
-
-			return result;
+			return PostDataAndGetResponseAsync< T >( command, jsonContent, token, shouldGetExceptionMessage, operationTimeout ).GetAwaiter().GetResult();
 		}
 
 		/// <summary>
@@ -275,10 +253,6 @@ namespace ShipStationAccess.V2.Services
 		{
 			var serverStatusCode = responseMessage.StatusCode;
 
-			if ( serverStatusCode == HttpStatusCode.NotFound
-				&& url.Contains( ShipStationCommand.GetOrder.Command ) )
-				return;
-
 			if ( serverStatusCode == HttpStatusCode.Unauthorized )
 				throw new ShipStationUnauthorizedException();
 
@@ -316,7 +290,11 @@ namespace ShipStationAccess.V2.Services
 			dynamic obj = JsonConvert.DeserializeObject( responseString );
 			try
 			{
-				return string.Format( "[Shipstation] {0} [Reason] {1}", ex.Message, obj.ExceptionMessage.ToString().Trim().TrimEnd( '.' ) );
+				var serverErrorText = string.Empty;
+				if ( !string.IsNullOrWhiteSpace( obj.ExceptionMessage?.ToString() ) )
+					serverErrorText = obj.ExceptionMessage.ToString().Trim().TrimEnd( '.' );
+
+				return string.Format( "[Shipstation] {0} [Reason] {1}", ex.Message, serverErrorText );
 			}
 			catch( RuntimeBinderException )
 			{
@@ -387,6 +365,10 @@ namespace ShipStationAccess.V2.Services
 			ShipStationLogger.Log.Error( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', timeout '{operationTimeout}', code '{message}' and response '{code}':\n{content}", apiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, responseString, Convert.ToInt32( statusCode ), jsonContent );
 		}
 
+		/// <summary>
+		///	This method is used to update service's last network activity time.
+		///	It's called every time before making API request to server or after handling the response.
+		/// </summary>
 		private void RefreshLastNetworkActivityTime()
 		{
 			this.LastNetworkActivityTime = DateTime.UtcNow;

@@ -42,6 +42,9 @@ namespace ShipStationAccess.V2
 
 		ShipStationRegisterResponse Register( ShipStationRegister register, CancellationToken token );
 
+		/// <summary>
+		///	This property can be used by the client to monitor the last access library's network activity time.
+		/// </summary>
 		DateTime LastActivityTime { get; }
 	}
 }

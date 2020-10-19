@@ -33,7 +33,10 @@ namespace ShipStationAccess.V2.Models
 		public const int DefaultTimeoutInMs = 5 * 60 * 1000;
 		private Dictionary< ShipStationOperationEnum, ShipStationOperationTimeout > _timeouts;
 
-		public ShipStationOperationTimeout DefaultOperationTimeout { get; set; }
+		/// <summary>
+		///	This timeout value will be used if specific timeout for operation is not provided. Default value can be changed through constructor.
+		/// </summary>
+		public ShipStationOperationTimeout DefaultOperationTimeout { get; private set; }
 
 		public int this[ ShipStationOperationEnum operation ]
 		{
@@ -56,10 +59,12 @@ namespace ShipStationAccess.V2.Models
 			_timeouts.Add( operation, timeout );
 		}
 
-		public ShipStationTimeouts()
+		public ShipStationTimeouts( int defaultTimeoutInMs )
 		{
 			_timeouts = new Dictionary< ShipStationOperationEnum, ShipStationOperationTimeout >();
-			this.DefaultOperationTimeout = new ShipStationOperationTimeout( DefaultTimeoutInMs );
+			this.DefaultOperationTimeout = new ShipStationOperationTimeout( defaultTimeoutInMs );
 		}
+
+		public ShipStationTimeouts() : this( DefaultTimeoutInMs ) { }
 	}
 }

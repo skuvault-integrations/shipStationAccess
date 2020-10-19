@@ -35,6 +35,9 @@ namespace ShipStationAccess.V2
 
 		public ShipStationService( ShipStationCredentials credentials ) : this( credentials, new ShipStationTimeouts() ) { }
 
+		/// <summary>
+		///	Last service's network activity time. Can be used to monitor service's state.
+		/// </summary>
 		public DateTime LastActivityTime
 		{
 			get

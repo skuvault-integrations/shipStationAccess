@@ -18,9 +18,8 @@ namespace ShipStationAccessTests
 		[ Test ]
 		public void GivenOwnDefaultTimeoutValue_WhenGetTimeoutIsCalled_ThenOverridenDefaultTimeoutIsReturned()
 		{
-			var operationsTimeouts = new ShipStationTimeouts();
 			var newDefaultTimeoutInMs = 10 * 60 * 1000;
-			operationsTimeouts.DefaultOperationTimeout = new ShipStationOperationTimeout( newDefaultTimeoutInMs );
+			var operationsTimeouts = new ShipStationTimeouts( newDefaultTimeoutInMs );
 
 			operationsTimeouts[ ShipStationOperationEnum.CreateUpdateOrder ].Should().Be( newDefaultTimeoutInMs );
 		}
