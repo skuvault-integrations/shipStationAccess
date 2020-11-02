@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using FluentAssertions;
 using LINQtoCSV;
 using Netco.Logging;
@@ -82,7 +83,7 @@ namespace ShipStationAccessTests.Orders
 		public void SerializationOrderTest()
 		{
 			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow );
+			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, CancellationToken.None );
 			var testOrder = orders.First();
 
 			var serializedOrder = testOrder.SerializeToJson();

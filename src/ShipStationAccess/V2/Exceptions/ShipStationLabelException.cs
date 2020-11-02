@@ -2,7 +2,7 @@
 
 namespace ShipStationAccess.V2.Exceptions
 {
-	public class ShipStationLabelException: Exception
+	public class ShipStationLabelException: ShipStationUnrecoverableException
 	{
 		public ShipStationLabelException()
 		{

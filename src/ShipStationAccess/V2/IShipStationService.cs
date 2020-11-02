@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Models.Register;
@@ -13,32 +14,37 @@ namespace ShipStationAccess.V2
 {
 	public interface IShipStationService
 	{
-		IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, Func< ShipStationOrder, ShipStationOrder > processOrder = null );
-		Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, bool getShipmentsAndFulfillments = false, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null, Action< IEnumerable< ReadError > > handleSkippedOrders = null );
-		IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber );
+		IEnumerable< ShipStationOrder > GetOrders( DateTime dateFrom, DateTime dateTo, CancellationToken token, Func< ShipStationOrder, ShipStationOrder > processOrder = null );
+		Task< IEnumerable< ShipStationOrder > > GetOrdersAsync( DateTime dateFrom, DateTime dateTo, CancellationToken token, bool getShipmentsAndFulfillments = false, Func< ShipStationOrder, Task< ShipStationOrder > > processOrder = null, Action< IEnumerable< ReadError > > handleSkippedOrders = null );
+		IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber, CancellationToken token );
 
-		ShipStationOrder GetOrderById( string orderId );
-		Task< ShipStationOrder > GetOrderByIdAsync( string orderId );
-		Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByIdAsync( string orderId );
-		Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByIdAsync( string orderId );
+		ShipStationOrder GetOrderById( string orderId, CancellationToken token );
+		Task< ShipStationOrder > GetOrderByIdAsync( string orderId, CancellationToken token );
+		Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByIdAsync( string orderId, CancellationToken token );
+		Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByIdAsync( string orderId, CancellationToken token );
 		
-		void UpdateOrder( ShipStationOrder order );
-		Task UpdateOrderAsync( ShipStationOrder order );
+		void UpdateOrder( ShipStationOrder order, CancellationToken token );
+		Task UpdateOrderAsync( ShipStationOrder order, CancellationToken token );
 
-		void UpdateOrderItemsWarehouseLocation( ShipStationWarehouseLocation warehouseLocation );
-		Task UpdateOrderItemsWarehouseLocationAsync( ShipStationWarehouseLocation warehouseLocation );
+		void UpdateOrderItemsWarehouseLocation( ShipStationWarehouseLocation warehouseLocation, CancellationToken token );
+		Task UpdateOrderItemsWarehouseLocationAsync( ShipStationWarehouseLocation warehouseLocation, CancellationToken token );
 
-		void UpdateOrderItemsWarehouseLocations( ShipStationWarehouseLocations warehouseLocations );
-		Task UpdateOrderItemsWarehouseLocationsAsync( ShipStationWarehouseLocations warehouseLocations );
+		void UpdateOrderItemsWarehouseLocations( ShipStationWarehouseLocations warehouseLocations, CancellationToken token );
+		Task UpdateOrderItemsWarehouseLocationsAsync( ShipStationWarehouseLocations warehouseLocations, CancellationToken token );
 
-		IEnumerable< ShipStationStore > GetStores();
-		Task< IEnumerable< ShipStationStore > > GetStoresAsync();
+		IEnumerable< ShipStationStore > GetStores( CancellationToken token );
+		Task< IEnumerable< ShipStationStore > > GetStoresAsync( CancellationToken token );
 
-		IEnumerable< ShipStationTag > GetTags();
-		Task< IEnumerable< ShipStationTag > > GetTagsAsync();
+		IEnumerable< ShipStationTag > GetTags( CancellationToken token );
+		Task< IEnumerable< ShipStationTag > > GetTagsAsync( CancellationToken token );
 
-		Task < ShipStationShippingLabel > CreateAndGetShippingLabelAsync( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, string weight, string weightUnit, bool isTestLabel = false );
+		Task < ShipStationShippingLabel > CreateAndGetShippingLabelAsync( string shipStationOrderId, string carrierCode, string serviceCode, string packageCode, string confirmation, DateTime shipDate, string weight, string weightUnit, CancellationToken token, bool isTestLabel = false );
 
-		ShipStationRegisterResponse Register( ShipStationRegister register );
+		ShipStationRegisterResponse Register( ShipStationRegister register, CancellationToken token );
+
+		/// <summary>
+		///	This property can be used by the client to monitor the last access library's network activity time.
+		/// </summary>
+		DateTime LastActivityTime { get; }
 	}
 }
