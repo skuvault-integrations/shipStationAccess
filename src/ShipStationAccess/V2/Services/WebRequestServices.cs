@@ -14,8 +14,23 @@ using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
 
 namespace ShipStationAccess.V2.Services
-{
-	internal sealed class WebRequestServices
+{ 
+	public interface IWebRequestServices
+	{
+		string GetApiKey();
+		T GetResponse< T >( ShipStationCommand command, string commandParams, CancellationToken token, int? operationTimeout = null );
+		Task< T > GetResponseAsync< T >( ShipStationCommand command, string commandParams, CancellationToken token, int? operationTimeout = null );
+		void PostData( ShipStationCommand command, string jsonContent, CancellationToken token, int? operationTimeout = null );
+		Task PostDataAsync( ShipStationCommand command, string jsonContent, CancellationToken token, int? operationTimeout = null );
+		T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null );
+		Task< T > PostDataAndGetResponseAsync< T >( ShipStationCommand command, string jsonContent, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null );
+		T PostDataAndGetResponseWithShipstationHeader< T >( ShipStationCommand command, string jsonContent, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null );
+		bool CanSkipException( WebException e );
+
+		DateTime? LastNetworkActivityTime { get; }
+	}
+
+	internal sealed class WebRequestServices : IWebRequestServices
 	{
 		private readonly ShipStationCredentials _credentials;
 
@@ -42,7 +57,7 @@ namespace ShipStationAccess.V2.Services
 			this.InitSecurityProtocol();
 		}
 
-		public static bool CanSkipException( WebException e )
+		public bool CanSkipException( WebException e )
 		{
 			var errorResponse = e.Response as HttpWebResponse;
 			return errorResponse != null && errorResponse.StatusCode == HttpStatusCode.InternalServerError;

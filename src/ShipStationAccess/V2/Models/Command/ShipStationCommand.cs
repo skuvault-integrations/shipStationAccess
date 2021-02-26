@@ -1,6 +1,6 @@
 ﻿namespace ShipStationAccess.V2.Models.Command
 {
-	internal sealed class ShipStationCommand
+	public sealed class ShipStationCommand
 	{
 		public static readonly ShipStationCommand Unknown = new ShipStationCommand( string.Empty );
 		public static readonly ShipStationCommand GetOrders = new ShipStationCommand( "/Orders/List" );

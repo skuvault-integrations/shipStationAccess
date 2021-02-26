@@ -21,15 +21,15 @@ namespace ShipStationAccess.V2
 {
 	public sealed class ShipStationService: IShipStationService
 	{
-		private readonly WebRequestServices _webRequestServices;
+		private readonly IWebRequestServices _webRequestServices;
 		private readonly ShipStationTimeouts _timeouts;
 
 		// lowered max limit for less order loss on Shipsation API's internal errors
 		private const int RequestMaxLimit = 20;
 
-		public ShipStationService( ShipStationCredentials credentials, ShipStationTimeouts timeouts )
+		public ShipStationService( ShipStationCredentials credentials, ShipStationTimeouts timeouts, IWebRequestServices webServices = null )
 		{
-			this._webRequestServices = new WebRequestServices( credentials );
+			this._webRequestServices = webServices ?? new WebRequestServices( credentials );
 			this._timeouts = timeouts;
 		}
 
@@ -85,6 +85,8 @@ namespace ShipStationAccess.V2
 				}
 				catch( Exception ex )
 				{
+					if( ex is ShipStationThrottleException )
+						throw;
 					if( ex.InnerException is WebException )
 						throw new ShipStationLabelException( ex.Message );
 					throw new ShipStationLabelException( "Please verify this order has the correct shipping address and carrier settings in ShipStation." );
@@ -189,94 +191,146 @@ namespace ShipStationAccess.V2
 			return processedOrders;
 		}
 
-		public async Task< PaginatedResponse< ShipStationOrder > > GetCreatedOrdersAsync( DateTime dateFrom, DateTime dateTo, CancellationToken token )
+		public async Task< SummaryResponse< ShipStationOrder > > GetCreatedOrdersAsync( DateTime dateFrom, DateTime dateTo, CancellationToken token )
 		{
 			var createdOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
-			var createdOrdersResponse = await this.DownloadOrdersAsync( createdOrdersEndpoint, token ).ConfigureAwait( false );
+			var createdOrdersResponse = new SummaryResponse< ShipStationOrder >();
+			await this.DownloadOrdersAsync( createdOrdersResponse, createdOrdersEndpoint, 1, RequestMaxLimit, token ).ConfigureAwait( false );
 			if ( createdOrdersResponse.Data.Any() )
 			{
-				ShipStationLogger.Log.Info( "Created orders downloaded using tenant's API key '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", 
+				ShipStationLogger.Log.Info( "Created orders downloaded using tenant's API key '{apiKey}' - {orders}/{expectedOrders} orders from {endpoint}", 
 					_webRequestServices.GetApiKey(), 
 					createdOrdersResponse.Data.Count(), 
-					createdOrdersResponse.TotalEntitiesExpected ?? 0, 
-					createdOrdersResponse.TotalPagesReceived, 
-					createdOrdersResponse.TotalPagesExpected ?? 0, 
+					createdOrdersResponse.TotalEntitiesExpected ?? 0,
 					createdOrdersResponse );
 			}
 
 			return createdOrdersResponse;
 		}
 
-		public async Task< PaginatedResponse< ShipStationOrder > > GetModifiedOrdersAsync( DateTime dateFrom, DateTime dateTo, CancellationToken token )
+		public async Task< SummaryResponse< ShipStationOrder > > GetModifiedOrdersAsync( DateTime dateFrom, DateTime dateTo, CancellationToken token )
 		{
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
-			var modifiedOrdersResponse = await this.DownloadOrdersAsync( modifiedOrdersEndpoint, token ).ConfigureAwait( false );
+			var modifiedOrdersResponse = new SummaryResponse< ShipStationOrder >();
+			await this.DownloadOrdersAsync( modifiedOrdersResponse, modifiedOrdersEndpoint, 1, RequestMaxLimit, token ).ConfigureAwait( false );
 			if ( modifiedOrdersResponse.Data.Any() )
 			{
-				ShipStationLogger.Log.Info( "Modified orders downloaded using tenant's API key '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", 
+				ShipStationLogger.Log.Info( "Modified orders downloaded using tenant's API key '{apiKey}' - {orders}/{expectedOrders} orders from {endpoint}", 
 									_webRequestServices.GetApiKey(), 
 									modifiedOrdersResponse.Data.Count(), 
 									modifiedOrdersResponse.TotalEntitiesExpected ?? 0, 
-									modifiedOrdersResponse.TotalPagesReceived, 
-									modifiedOrdersResponse.TotalPagesExpected ?? 0, 
 									modifiedOrdersResponse );
 			}
 
 			return modifiedOrdersResponse;
 		}
 
-		public async Task< PaginatedResponse< ShipStationOrder > > DownloadOrdersAsync( string endPoint, CancellationToken token )
+		/// <summary>
+		///	Download all orders from specific endpoint
+		/// </summary>
+		/// <param name="endPoint">API endpoint</param>
+		/// <param name="currentPage">page index</param>
+		/// <param name="currentPageSize">page size</param>
+		/// <param name="token">cancellation token</param>
+		/// <returns></returns>
+		public async Task DownloadOrdersAsync( SummaryResponse< ShipStationOrder > summary, string endPoint, int currentPage, int currentPageSize, CancellationToken token )
 		{ 
-			var response = new PaginatedResponse< ShipStationOrder >();
-			var currentPage = 1;
-
-			do
+			while ( true )
 			{
-				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
-				var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
-
-				ShipStationOrders ordersPage = null;
-				try
+				var ordersPage = await DownloadOrdersPageAsync( endPoint, currentPage, currentPageSize, token ).ConfigureAwait( false );
+				if ( ordersPage.HasInternalError )
 				{
-					await ActionPolicies.GetAsync.Do( async () =>
+					if ( currentPageSize == 1 )
 					{
-						ordersPage = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint, token, _timeouts[ ShipStationOperationEnum.ListOrders ] ).ConfigureAwait( false );
-					} );
-				}
-				catch( WebException e )
-				{
-					if( WebRequestServices.CanSkipException( e ) )
-					{
-						response.ReadErrors.Add( new ReadError()
+						summary.ReadErrors.Add( new ReadError()
 						{
 							Url = endPoint,
 							Page = currentPage,
-							PageSize = RequestMaxLimit
+							PageSize = currentPageSize
 						} );
 
-						ShipStationLogger.Log.Warn( e, "Skipped get orders request page {pageNumber} of request {request} due to internal error on ShipStation's side", currentPage, ordersEndPoint );
+						summary.TotalEntitiesHandled += 1;
 						currentPage++;
+
+						ShipStationLogger.Log.Warn( "Skipped order on pos {orderPos} of request {request} due to internal error on ShipStation's side", summary.TotalEntitiesHandled - 1, endPoint );
 						continue;
 					}
-					else
-						throw;
+
+					currentPageSize = PageSizeAdjuster.GetHalfPageSize( currentPageSize );
+					currentPage = PageSizeAdjuster.GetNextPageIndex( summary.TotalEntitiesHandled, currentPageSize );
+
+					summary.TotalEntitiesHandled -= summary.TotalEntitiesHandled % currentPageSize;
+					ShipStationLogger.Log.Warn( "Trying to decrease orders page size twice due to internal error on ShipStation's side. Current page size: {ordersPageSize}, orders downloaded {ordersDownloaded}", currentPageSize, summary.TotalEntitiesHandled );
+
+					await DownloadOrdersAsync( summary, endPoint, currentPage, currentPageSize, token ).ConfigureAwait( false );
+					return;
 				}
 
+				if ( !ordersPage.Data.Any() )
+				{
+					return;
+				}
+
+				summary.TotalEntitiesExpected = ordersPage.TotalEntities;
+				summary.TotalEntitiesHandled += ordersPage.Data.Count;
+				summary.Data.AddRange( ordersPage.Data );
 				currentPage++;
 
-				if ( ordersPage?.Orders == null || !ordersPage.Orders.Any() )
-					break;
+				if ( currentPageSize != RequestMaxLimit )
+				{
+					var newPageSize = PageSizeAdjuster.DoublePageSize( currentPageSize, RequestMaxLimit );
+					var newCurrentPage = PageSizeAdjuster.GetNextPageIndex( summary.TotalEntitiesHandled, newPageSize );
 
-				response.TotalPagesExpected = ordersPage.TotalPages;
-				response.TotalEntitiesExpected = ordersPage.TotalOrders;
+					if ( !PageSizeAdjuster.AreEntitiesWillBeDownloadedAgainAfterChangingThePageSize( newCurrentPage, newPageSize, summary.TotalEntitiesHandled ) )
+					{
+						await DownloadOrdersAsync( summary, endPoint, newCurrentPage, newPageSize, token ).ConfigureAwait( false );
+						return;
+					}
+				}
+			}
+		}
 
-				response.Data.AddRange( ordersPage.Orders );
+		/// <summary>
+		///	Downloads orders page
+		/// </summary>
+		/// <param name="endpoint">API endpoint</param>
+		/// <param name="page">page index</param>
+		/// <param name="pageSize">page size</param>
+		/// <param name="token">cancellation token</param>
+		/// <returns></returns>
+		private async Task< PageResponse< ShipStationOrder > > DownloadOrdersPageAsync( string endPoint, int page, int pageSize, CancellationToken token )
+		{
+			var ordersPage = new PageResponse< ShipStationOrder >();
+			var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( page, pageSize ) );
+			var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
 
-			} while( currentPage <= response.TotalPagesExpected );
-			
-			response.TotalPagesReceived = currentPage - 1;
-			
-			return response;
+			ShipStationOrders response = null;
+			try
+			{
+				await ActionPolicies.GetAsync.Do( async () =>
+				{
+					response = await this._webRequestServices.GetResponseAsync< ShipStationOrders >( ShipStationCommand.GetOrders, ordersEndPoint, token, _timeouts[ ShipStationOperationEnum.ListOrders ] ).ConfigureAwait( false );
+				} );
+			}
+			catch( WebException e )
+			{
+				if( this._webRequestServices.CanSkipException( e ) )
+				{
+					ordersPage.HasInternalError = true;
+					return ordersPage;
+				}
+			}
+
+			if ( response == null )
+				return ordersPage;
+
+			ordersPage.TotalPages = response.TotalPages;
+			ordersPage.TotalEntities = response.TotalOrders;
+
+			if ( response.Orders != null && response.Orders.Any() )
+				ordersPage.Data.AddRange( response.Orders );
+
+			return ordersPage;
 		}
 
 		public IEnumerable< ShipStationOrder > GetOrders( string storeId, string orderNumber, CancellationToken token )

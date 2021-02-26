@@ -25,8 +25,10 @@ namespace ShipStationAccess.V2.Misc
 			if( x is ShipStationUnrecoverableException
 				|| x is TaskCanceledException )
 				return false;
-
-			return true;
+			var webX = x as WebException;
+			if( webX?.Response == null )
+				return true;
+			return webX.Response.GetHttpStatusCode() != HttpStatusCode.Unauthorized;
 		};
 
 		private static readonly ActionPolicy _shipStationSubmitPolicy = ActionPolicy.With( _exceptionHandler ).Retry( MaxRetryAttempts, ( ex, i ) =>

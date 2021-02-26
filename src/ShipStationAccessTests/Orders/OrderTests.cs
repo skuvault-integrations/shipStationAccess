@@ -9,13 +9,18 @@ using LINQtoCSV;
 using Netco.Extensions;
 using Netco.Logging;
 using Netco.Logging.SerilogIntegration;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
 using Serilog;
 using ShipStationAccess;
 using ShipStationAccess.V2;
 using ShipStationAccess.V2.Models;
+using ShipStationAccess.V2.Models.Command;
 using ShipStationAccess.V2.Models.Order;
+using ShipStationAccess.V2.Models.Store;
 using ShipStationAccess.V2.Models.WarehouseLocation;
+using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccessTests.Orders
 {
@@ -59,6 +64,133 @@ namespace ShipStationAccessTests.Orders
 			orders.Count().Should().BeGreaterThan( 0 );
 			orders.Any( o => o.Shipments != null ).Should().Be( false );
 			orders.Any( o => o.Fulfillments != null ).Should().Be( false );
+		}
+
+		[ Test ]
+		public async Task GivenShipStationOrdersServiceWithInternalErrors_WhenGetOrdersAsyncCalled_ThenOrdersReturnedWithoutSkippedOrder()
+		{
+			var totalOrders = 120;
+			var ordersPosWithErrors = new int[] { 17, 50, 67, 119 };
+			var serverStub = PrepareShipStationServerStub( totalOrders, ordersPosWithErrors );
+			var service = new ShipStationService( this._credentials, new ShipStationTimeouts(), serverStub );
+			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow, CancellationToken.None, getShipmentsAndFulfillments: true );
+
+			orders.Count().Should().Be( totalOrders - ordersPosWithErrors.Length );
+		}
+
+		[ Test ]
+		public async Task GivenShipStationOrdersServiceWithInternalErrors_WhenDownloadOrdersAsyncCalled_ThenOrderPageWasSkipped()
+		{
+			var ordersPosWithErrors = new int[] { 62, 84 };
+			var totalExpectedOrders = 100;
+			var serverStub = PrepareShipStationServerStub( totalExpectedOrders, ordersPosWithErrors );
+			var service = new ShipStationService( this._credentials, new ShipStationTimeouts(), serverStub );
+			var createdOrdersResponse = await service.GetCreatedOrdersAsync( DateTime.UtcNow.AddDays( -30 ), DateTime.UtcNow, CancellationToken.None );
+
+			createdOrdersResponse.ReadErrors.Count.Should().Be( ordersPosWithErrors.Length );
+			for ( int i = 0; i < ordersPosWithErrors.Length; i++ )
+			{
+				createdOrdersResponse.ReadErrors[ i ].Page.Should().Be( ordersPosWithErrors[ i ] + 1 );
+				createdOrdersResponse.ReadErrors[ i ].PageSize.Should().Be( 1 );
+			}
+
+			createdOrdersResponse.TotalEntitiesExpected.Should().Be( totalExpectedOrders );
+		}
+
+		private IWebRequestServices PrepareShipStationServerStub( int totalOrders, int[] ordersPosWithErrors )
+		{
+			var stubWebRequestService = Substitute.For< IWebRequestServices >();
+			stubWebRequestService.GetResponseAsync< List< ShipStationStore > >( Arg.Any< ShipStationCommand >(), Arg.Any< string >(), Arg.Any< CancellationToken >(), Arg.Any< int? >() ).Returns( ( x ) =>
+			{
+				return new List< ShipStationStore >()
+				{
+					{
+						new ShipStationStore()
+						{
+							StoreId = 1, 
+							MarketplaceId = 1,
+							MarketplaceName = "SkuVault"
+						}
+					}
+				};
+			} );
+			var ordersResponse = new List< ShipStationOrder >();
+			for( int i = 1; i <= totalOrders; i++ )
+			{
+				ordersResponse.Add( new ShipStationOrder()
+				{
+					OrderId = i,
+					AdvancedOptions = new ShipStationOrderAdvancedOptions(){ 
+						StoreId = 1 
+					} 
+				} );
+			}
+
+			stubWebRequestService.GetResponseAsync< ShipStationOrders >( Arg.Any< ShipStationCommand >(), Arg.Any< string >(), Arg.Any< CancellationToken >(), Arg.Any< int? >() )
+				.Returns( ( x ) => {
+					GetPageAndPageSizeFromUrl( (string)x[ 1 ], out var requestedPage, out var requestedPageSize );
+					var firstOrderIndexOnPage = ( requestedPage - 1 ) * requestedPageSize;
+					if ( firstOrderIndexOnPage > totalOrders )
+						return new ShipStationOrders();
+
+					var isRequestedOrdersOutOfRange = ( firstOrderIndexOnPage + requestedPageSize ) > totalOrders;
+					return new ShipStationOrders()
+					{
+						TotalOrders = ordersResponse.Count,
+						TotalPages = (int)Math.Ceiling( ordersResponse.Count * 1.0 / requestedPageSize ),
+						Orders = ordersResponse.GetRange( firstOrderIndexOnPage, isRequestedOrdersOutOfRange ? totalOrders - firstOrderIndexOnPage : requestedPageSize  )
+					};
+			} );
+			stubWebRequestService.CanSkipException( Arg.Any< WebException >() ).Returns( true );
+			stubWebRequestService.GetResponseAsync< ShipStationOrders >( Arg.Any< ShipStationCommand >(), 
+				Arg.Is< string >( param => ShouldServerReturnInternalError( param, ordersPosWithErrors ) ), Arg.Any< CancellationToken >(), Arg.Any< int? >() )
+				.Throws( new WebException() );
+
+			return stubWebRequestService;
+		}
+
+		private bool ShouldServerReturnInternalError( string param, int[] ordersPosWithErrors )
+		{
+			this.GetPageAndPageSizeFromUrl( param, out var requestedPage, out var requestedPageSize );
+
+			foreach( var orderWithErrorIndex in ordersPosWithErrors )
+			{
+				if ( orderWithErrorIndex >= ( requestedPage - 1 ) * requestedPageSize 
+					&& orderWithErrorIndex < requestedPage * requestedPageSize )
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private void GetPageAndPageSizeFromUrl( string url, out int page, out int pageSize )
+		{
+			var urlParams = url.Split( new string[] { "&" }, StringSplitOptions.RemoveEmptyEntries );
+			page = 0;
+			pageSize = 0;
+
+			foreach( var urlParam in urlParams )
+			{
+				var pair = urlParam.Split( new char[] { '=' }, StringSplitOptions.RemoveEmptyEntries );
+				var paramName = pair[ 0 ];
+				var paramValue = pair[ 1 ];
+
+				switch( paramName )
+				{
+					case "pageSize":
+					{
+						pageSize = int.Parse( paramValue );
+						break;
+					}
+					case "page":
+					{
+						page = int.Parse( paramValue );
+						break;
+					}
+				}
+			}
 		}
 
 		[ Test ]

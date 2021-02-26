@@ -90,6 +90,7 @@
     <Compile Include="V2\Exceptions\ShipStationUnauthorizedException.cs" />
     <Compile Include="V2\IShipStationService.cs" />
     <Compile Include="V2\Misc\ActionPolicies.cs" />
+    <Compile Include="V2\Misc\PageSizeAdjuster.cs" />
     <Compile Include="V2\Misc\ShipstationLogger.cs" />
     <Compile Include="V2\Misc\WebExtensions.cs" />
     <Compile Include="V2\Models\Command\ShipStationCommand.cs" />
