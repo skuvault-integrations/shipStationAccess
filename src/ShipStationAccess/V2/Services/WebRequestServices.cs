@@ -12,6 +12,7 @@ namespace ShipStationAccess.V2.Services
 	internal sealed class WebRequestServices
 	{
 		private readonly ShipStationCredentials _credentials;
+		public DateTime? LastNetworkActivityTime { get; private set; }
 		public string GetApiKey()
 		{
 			return _credentials.ApiKey;
@@ -32,15 +33,19 @@ namespace ShipStationAccess.V2.Services
 				{
 					using( var response = request.GetResponse() )
 					{
+						RefreshLastNetworkActivityTime();
 						var shipStationResponse = ProcessResponse( response );
+						RefreshLastNetworkActivityTime();
 						if( !shipStationResponse.IsThrottled )
 							return this.ParseResponse< T >( shipStationResponse.Data );
-
+						
+						RefreshLastNetworkActivityTime();
 						resetDelay = shipStationResponse.ResetInSeconds;
 					}
 				}
 				catch( WebException x )
 				{
+					RefreshLastNetworkActivityTime();
 					var response = x.Response;
 					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
 					switch( statusCode )
@@ -67,15 +72,19 @@ namespace ShipStationAccess.V2.Services
 				{
 					using( var response = await request.GetResponseAsync() )
 					{
+						RefreshLastNetworkActivityTime();
 						var shipStationResponse = ProcessResponse( response );
+						RefreshLastNetworkActivityTime();
 						if( !shipStationResponse.IsThrottled )
 							return this.ParseResponse< T >( shipStationResponse.Data );
 
+						RefreshLastNetworkActivityTime();
 						resetDelay = shipStationResponse.ResetInSeconds;
 					}
 				}
 				catch( WebException x )
 				{
+					RefreshLastNetworkActivityTime();
 					var response = x.Response;
 					var statusCode = Convert.ToInt32( response.GetHttpStatusCode() );
 					switch( statusCode )
@@ -99,11 +108,15 @@ namespace ShipStationAccess.V2.Services
 
 			try
 			{
-				using( var response = ( HttpWebResponse )request.GetResponse() )
+				using (var response = (HttpWebResponse) request.GetResponse())
+				{
+					RefreshLastNetworkActivityTime();
 					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+				}
 			}
 			catch( WebException x )
 			{
+				RefreshLastNetworkActivityTime();
 				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
 				throw;
 			}
@@ -116,11 +129,15 @@ namespace ShipStationAccess.V2.Services
 
 			try
 			{
-				using( var response = ( HttpWebResponse )await request.GetResponseAsync() )
+				using (var response = (HttpWebResponse) await request.GetResponseAsync())
+				{
+					RefreshLastNetworkActivityTime();
 					this.LogUpdateInfo( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, response.StatusCode, jsonContent );
+				}
 			}
 			catch( WebException x )
 			{
+				RefreshLastNetworkActivityTime();
 				this.LogPostError( this._credentials.ApiKey, request.RequestUri.AbsoluteUri, x.Response.GetHttpStatusCode(), jsonContent, x );
 				throw;
 			}
@@ -230,6 +247,15 @@ namespace ShipStationAccess.V2.Services
 		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, WebException x )
 		{
 			ShipStationLogger.Log.Trace( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, x.Response.GetResponseString(), Convert.ToInt32( statusCode ), jsonContent );
+		}
+		
+		/// <summary>
+		///	This method is used to update service's last network activity time.
+		///	It's called every time before making API request to server or after handling the response.
+		/// </summary>
+		private void RefreshLastNetworkActivityTime()
+		{
+			this.LastNetworkActivityTime = DateTime.UtcNow;
 		}
 		#endregion
 	}

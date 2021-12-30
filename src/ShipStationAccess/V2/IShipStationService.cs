@@ -20,5 +20,10 @@ namespace ShipStationAccess.V2
 
 		IEnumerable< ShipStationTag > GetTags();
 		Task < IEnumerable< ShipStationTag > > GetTagsAsync();
+		
+		/// <summary>
+		///	This property can be used by the client to monitor the last access library's network activity time.
+		/// </summary>
+		DateTime LastActivityTime { get; }
 	}
 }

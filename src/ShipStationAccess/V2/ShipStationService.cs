@@ -19,6 +19,17 @@ namespace ShipStationAccess.V2
 		private readonly WebRequestServices _webRequestServices;
 		private const int RequestMaxLimit = 100;
 
+		/// <summary>
+		///	Last service's network activity time. Can be used to monitor service's state.
+		/// </summary>
+		public DateTime LastActivityTime
+		{
+			get
+			{
+				return this._webRequestServices.LastNetworkActivityTime ?? DateTime.UtcNow;
+			}
+		}
+		
 		public ShipStationService( ShipStationCredentials credentials )
 		{
 			this._webRequestServices = new WebRequestServices( credentials );
