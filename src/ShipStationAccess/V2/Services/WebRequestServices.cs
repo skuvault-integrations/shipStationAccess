@@ -39,7 +39,6 @@ namespace ShipStationAccess.V2.Services
 						if( !shipStationResponse.IsThrottled )
 							return this.ParseResponse< T >( shipStationResponse.Data );
 						
-						RefreshLastNetworkActivityTime();
 						resetDelay = shipStationResponse.ResetInSeconds;
 					}
 				}
@@ -78,7 +77,6 @@ namespace ShipStationAccess.V2.Services
 						if( !shipStationResponse.IsThrottled )
 							return this.ParseResponse< T >( shipStationResponse.Data );
 
-						RefreshLastNetworkActivityTime();
 						resetDelay = shipStationResponse.ResetInSeconds;
 					}
 				}
