@@ -33,59 +33,59 @@ namespace ShipStationAccess.V2.Services
 			return JsonConvert.DeserializeObject<T>(jsonContent, JsonSerializerSettings);
 		}
 	}
-
+	#region Custom serialization
 	public static class DateTimeSerializeHelper
 	{
 		private static readonly TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById( "Pacific Standard Time" );
 
 		public static string SerializeDateTime( DateTime? dateTimeNullable )
 		{
-			if( !dateTimeNullable.HasValue )
+			if (!dateTimeNullable.HasValue)
 				return string.Empty;
 
-			return SerializeDateTime( dateTimeNullable.Value );
+			return SerializeDateTime(dateTimeNullable.Value);
 		}
 
-		public static string SerializeDateTime( DateTime utcTime )
+		public static string SerializeDateTime(DateTime utcTime)
 		{
-			if( utcTime.Kind == DateTimeKind.Unspecified || utcTime.Kind == DateTimeKind.Local )
-				utcTime = DateTime.SpecifyKind( utcTime, DateTimeKind.Utc );
+			if (utcTime.Kind == DateTimeKind.Unspecified || utcTime.Kind == DateTimeKind.Local)
+				utcTime = DateTime.SpecifyKind(utcTime, DateTimeKind.Utc);
 
-			if( utcTime == DateTime.MinValue || utcTime == DateTime.MaxValue || utcTime == default(DateTime) )
-				return utcTime.ToString( CultureInfo.InvariantCulture );
+			if (utcTime == DateTime.MinValue || utcTime == DateTime.MaxValue || utcTime == default(DateTime))
+				return utcTime.ToString(CultureInfo.InvariantCulture);
 
 			var pstTime =
-				TimeZoneInfo.ConvertTime( utcTime, TimeZoneInfo.Utc, _pacificTimeZone )
-					.ToString( "yyyy-MM-ddTHH:mm:ss.fffffff", CultureInfo.InvariantCulture );
+				TimeZoneInfo.ConvertTime(utcTime, TimeZoneInfo.Utc, _pacificTimeZone)
+					.ToString("yyyy-MM-ddTHH:mm:ss.fffffff", CultureInfo.InvariantCulture);
 			return pstTime;
 		}
 
-		public static DateTime? DeserializeDateTimeNullable( string pstStringTime )
+		public static DateTime? DeserializeDateTimeNullable(string pstStringTime)
 		{
-			var dateTime = DeserializeDateTime( pstStringTime );
-			return dateTime == default(DateTime) ? ( DateTime? )null : dateTime;
+			var dateTime = DeserializeDateTime(pstStringTime);
+			return dateTime == default(DateTime) ? (DateTime?) null : dateTime;
 		}
 
-		public static DateTime DeserializeDateTime( string pstStringTime )
+		public static DateTime DeserializeDateTime(string pstStringTime)
 		{
-			if( string.IsNullOrWhiteSpace( pstStringTime ) )
+			if (string.IsNullOrWhiteSpace(pstStringTime))
 				return default(DateTime);
 
 			DateTime pstTime;
-			if( !DateTime.TryParse( pstStringTime, out pstTime ) )
+			if (!DateTime.TryParse(pstStringTime, out pstTime))
 				return pstTime;
 
-			if( pstTime == DateTime.MinValue || pstTime == DateTime.MaxValue || pstTime == default(DateTime) )
+			if (pstTime == DateTime.MinValue || pstTime == DateTime.MaxValue || pstTime == default(DateTime))
 				return pstTime;
 
 			var pacificTimeZone = _pacificTimeZone;
 
-			if( pacificTimeZone.IsInvalidTime( pstTime ) || pacificTimeZone.IsAmbiguousTime( pstTime ) )
-				pstTime = pstTime.AddHours( 1 );
+			if (pacificTimeZone.IsInvalidTime(pstTime) || pacificTimeZone.IsAmbiguousTime(pstTime))
+				pstTime = pstTime.AddHours(1);
 
-			if( pstTime.Kind != DateTimeKind.Unspecified )
-				pstTime = DateTime.SpecifyKind( pstTime, DateTimeKind.Unspecified );
-			var utcDate = TimeZoneInfo.ConvertTime( pstTime, pacificTimeZone, TimeZoneInfo.Utc );
+			if (pstTime.Kind != DateTimeKind.Unspecified)
+				pstTime = DateTime.SpecifyKind(pstTime, DateTimeKind.Unspecified);
+			var utcDate = TimeZoneInfo.ConvertTime(pstTime, pacificTimeZone, TimeZoneInfo.Utc);
 
 			return utcDate;
 		}

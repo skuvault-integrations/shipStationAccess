@@ -40,6 +40,30 @@ namespace ShipStationAccessTests.Orders
 				_shipStationService = this.ShipStationFactory.CreateServiceV2( this._credentials );
 		}
 
+		[Test]
+		public void DeserializeOrderWithNullablePaymentDateTest()
+		{
+			var json = "{\"orders\":["
+			           +
+			           "{\"orderId\":156695469,\"orderNumber\":\"100267\",\"orderKey\":\"manual-916d07f350db46f4aeb8608ffec2b265\",\"orderDate\":\"2015-07-28T10:58:54.5730000\",\"createDate\":\"2015-07-28T10:58:54.5730000\",\"modifyDate\":\"2015-08-26T07:23:39.6100000\",\"paymentDate\":null,\"orderStatus\":\"shipped\",\"customerUsername\":\"1@1\",\"customerEmail\":\"1@1\",\"billTo\":{\"name\":\"meme\",\"company\":null,\"street1\":null,\"street2\":null,\"street3\":null,\"city\":null,\"state\":null,\"postalCode\":null,\"country\":null,\"phone\":null,\"residential\":null,\"addressVerified\":null},\"shipTo\":{\"name\":\"meme\",\"company\":\"\",\"street1\":\"11751 S DIXIE HWY\",\"street2\":\"\",\"street3\":null,\"city\":\"SONORA\",\"state\":\"KY\",\"postalCode\":\"42776-9739\",\"country\":\"US\",\"phone\":\"12707662520\",\"residential\":true,\"addressVerified\":\"Address validated successfully\"},\"items\":[{\"orderItemId\":212535867,\"lineItemKey\":null,\"sku\":\"testSku1\",\"name\":\"test\",\"imageUrl\":null,\"weight\":null,\"quantity\":1,\"unitPrice\":2.00,\"taxAmount\":null,\"shippingAmount\":null,\"warehouseLocation\":\"A1 (100), A1 (12)\",\"options\":[],\"productId\":14841724,\"fulfillmentSku\":null,\"adjustment\":false,\"upc\":null,\"createDate\":\"2015-07-28T10:58:54.573\",\"modifyDate\":\"2015-07-28T10:58:54.573\"}],\"orderTotal\":2.00,\"amountPaid\":0.00,\"taxAmount\":0.00,\"shippingAmount\":0.00,\"customerNotes\":null,\"internalNotes\":null,\"gift\":false,\"giftMessage\":null,\"paymentMethod\":null,\"requestedShippingService\":null,\"carrierCode\":null,\"serviceCode\":null,\"packageCode\":null,\"confirmation\":\"none\",\"shipDate\":\"2015-08-26\",\"holdUntilDate\":null,\"weight\":{\"value\":0.00,\"units\":\"ounces\"},\"dimensions\":null,\"insuranceOptions\":{\"provider\":null,\"insureShipment\":false,\"insuredValue\":0.0},\"internationalOptions\":{\"contents\":null,\"customsItems\":null,\"nonDelivery\":null},\"advancedOptions\":{\"warehouseId\":18911,\"nonMachinable\":false,\"saturdayDelivery\":false,\"containsAlcohol\":false,\"mergedOrSplit\":false,\"parentId\":null,\"storeId\":28400,\"customField1\":null,\"customField2\":null,\"customField3\":null,\"source\":null,\"billToParty\":null,\"billToAccount\":null,\"billToPostalCode\":null,\"billToCountryCode\":null},\"tagIds\":null,\"userId\":null},"
+			           + "],\"total\":146,\"page\":1,\"pages\":2}";
+			var orders = json.DeserializeJson<ShipStationOrders>();
+			orders.Orders.Count.Should().Be(1);
+			orders.Orders[0].PaymentDate.Should().Be(null);
+		}
+
+		[Test]
+		public void DeserializeOrderWithManyCustomsItemsTest()
+		{
+			var json = "{\"orders\":["
+			           +
+			           "{\"orderId\":156799376,\"orderNumber\":\"104778\",\"orderKey\":\"104778\",\"orderDate\":\"2015-07-28T23:12:50.2500000\",\"createDate\":\"2015-07-28T23:13:55.6130000\",\"modifyDate\":\"2015-07-28T23:50:23.7370000\",\"paymentDate\":\"2015-08-26T07:23:39.6100000\",\"orderStatus\":\"cancelled\",\"customerUsername\":null,\"customerEmail\":null,\"billTo\":{\"name\":\"A B\",\"company\":\"\",\"street1\":\"line1\",\"street2\":\"\",\"street3\":null,\"city\":\"Silent Hill\",\"state\":\"\",\"postalCode\":\"444455511\",\"country\":\"NL\",\"phone\":\"\",\"residential\":null,\"addressVerified\":null},\"shipTo\":{\"name\":\"A B\",\"company\":\"\",\"street1\":\"line1\",\"street2\":\"\",\"street3\":null,\"city\":\"Silent Hill\",\"state\":\"\",\"postalCode\":\"444455511\",\"country\":\"NL\",\"phone\":\"\",\"residential\":false,\"addressVerified\":\"Address not yet validated\"},\"items\":[{\"orderItemId\":212701021,\"lineItemKey\":\"32077214\",\"sku\":\"testSku1\",\"name\":\"Test Product Sync\",\"imageUrl\":null,\"weight\":{\"value\":384.00,\"units\":\"ounces\"},\"quantity\":1,\"unitPrice\":1.00,\"taxAmount\":null,\"shippingAmount\":null,\"warehouseLocation\":\"A1 (100), A1 (12)\",\"options\":[],\"productId\":14841724,\"fulfillmentSku\":null,\"adjustment\":false,\"upc\":null,\"createDate\":\"2015-07-28T23:13:55.613\",\"modifyDate\":\"2015-07-28T23:13:55.613\"}],\"orderTotal\":1.00,\"amountPaid\":0.00,\"taxAmount\":0.00,\"shippingAmount\":0.00,\"customerNotes\":null,\"internalNotes\":null,\"gift\":false,\"giftMessage\":null,\"paymentMethod\":null,\"requestedShippingService\":null,\"carrierCode\":null,\"serviceCode\":null,\"packageCode\":null,\"confirmation\":\"none\",\"shipDate\":\"2015-07-28\",\"holdUntilDate\":null,\"weight\":{\"value\":384.00,\"units\":\"ounces\"},\"dimensions\":null,\"insuranceOptions\":{\"provider\":null,\"insureShipment\":false,\"insuredValue\":0.0},\"internationalOptions\":{\"contents\":\"merchandise\",\"customsItems\":[{\"customsItemId\":15187335,\"description\":\"Test Product Sync\",\"quantity\":1,\"value\":1.00,\"harmonizedTariffCode\":null,\"countryOfOrigin\":\"US\"}],\"nonDelivery\":\"return_to_sender\"},\"advancedOptions\":{\"warehouseId\":18911,\"nonMachinable\":false,\"saturdayDelivery\":false,\"containsAlcohol\":false,\"mergedOrSplit\":false,\"parentId\":null,\"storeId\":28400,\"customField1\":null,\"customField2\":null,\"customField3\":null,\"source\":null,\"billToParty\":null,\"billToAccount\":null,\"billToPostalCode\":null,\"billToCountryCode\":null},\"tagIds\":null,\"userId\":null},"
+			           + "],\"total\":146,\"page\":1,\"pages\":2}";
+			var orders = json.DeserializeJson<ShipStationOrders>();
+			orders.Orders.Count.Should().Be(1);
+			orders.Orders[0].InternationalOptions.CustomsItems.Count.Should().BeGreaterThan(0);
+		}
+
 		[ Test ]
 		public void GetOrders()
 		{
