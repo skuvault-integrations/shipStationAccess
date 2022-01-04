@@ -6,6 +6,9 @@ namespace ShipStationAccess.V2.Models.OrderItem
 	[ DataContract ]
 	public sealed class ShipStationOrderItem
 	{
+		[ DataMember( Name = "orderItemId" ) ]
+		public long OrderItemId{ get; set; }
+
 		[ DataMember( Name = "lineItemKey" ) ]
 		public string LineItemKey{ get; set; }
 

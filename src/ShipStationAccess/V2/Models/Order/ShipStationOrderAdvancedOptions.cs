@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace ShipStationAccess.V2.Models.Order
 {
@@ -31,6 +32,15 @@ namespace ShipStationAccess.V2.Models.Order
 
 		[ DataMember( Name = "source" ) ]
 		public string Source{ get; set; }
+
+		[ DataMember( Name = "mergedOrSplit" ) ]
+		public bool MergedOrSplit{ get; set; }
+
+		[ DataMember( Name = "mergedIds" ) ]
+		public IList< long > MergedIds{ get; set; }
+
+		[ DataMember( Name = "parentId" ) ]
+		public long? ParentId { get; set; }
 
 		[ DataMember( Name = "billToParty" ) ]
 		public string BillToParty{ get; set; }

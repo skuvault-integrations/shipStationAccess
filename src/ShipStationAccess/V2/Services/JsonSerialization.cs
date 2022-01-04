@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Globalization;
 using Newtonsoft.Json;
 
@@ -32,12 +33,12 @@ namespace ShipStationAccess.V2.Services
 			return JsonConvert.DeserializeObject<T>(jsonContent, JsonSerializerSettings);
 		}
 	}
-
+	#region Custom serialization
 	public static class DateTimeSerializeHelper
 	{
-		private static readonly TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+		private static readonly TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById( "Pacific Standard Time" );
 
-		public static string SerializeDateTime(DateTime? dateTimeNullable)
+		public static string SerializeDateTime( DateTime? dateTimeNullable )
 		{
 			if (!dateTimeNullable.HasValue)
 				return string.Empty;
@@ -90,17 +91,17 @@ namespace ShipStationAccess.V2.Services
 		}
 	}
 
-	public class DateTimeConverter : JsonConverter
+	public class DateTimeConverter: JsonConverter
 	{
-		public override bool CanConvert(Type objectType)
+		public override bool CanConvert( Type objectType )
 		{
-			return (objectType == typeof (DateTime));
+			return ( objectType == typeof( DateTime ) );
 		}
 
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		public override void WriteJson( JsonWriter writer, object value, JsonSerializer serializer )
 		{
-			var date = (DateTime) value;
-			writer.WriteValue(DateTimeSerializeHelper.SerializeDateTime(date));
+			var date = ( DateTime )value;
+			writer.WriteValue( DateTimeSerializeHelper.SerializeDateTime( date ) );
 		}
 
 		public override bool CanRead
@@ -108,26 +109,26 @@ namespace ShipStationAccess.V2.Services
 			get { return true; }
 		}
 
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+		public override object ReadJson( JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer )
 		{
 			var dataString = reader.Value.ToString();
-			var date = DateTimeSerializeHelper.DeserializeDateTime(dataString);
+			var date = DateTimeSerializeHelper.DeserializeDateTime( dataString );
 
 			return date;
 		}
 	}
 
-	public class DateTimeNullConverter : JsonConverter
+	public class DateTimeNullConverter: JsonConverter
 	{
-		public override bool CanConvert(Type objectType)
+		public override bool CanConvert( Type objectType )
 		{
-			return (objectType == typeof (DateTime?));
+			return ( objectType == typeof( DateTime? ) );
 		}
 
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		public override void WriteJson( JsonWriter writer, object value, JsonSerializer serializer )
 		{
-			var date = (DateTime?) value;
-			writer.WriteValue(DateTimeSerializeHelper.SerializeDateTime(date));
+			var date = ( DateTime? )value;
+			writer.WriteValue( DateTimeSerializeHelper.SerializeDateTime( date ) );
 		}
 
 		public override bool CanRead
@@ -135,14 +136,12 @@ namespace ShipStationAccess.V2.Services
 			get { return true; }
 		}
 
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+		public override object ReadJson( JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer )
 		{
-			if (reader.Value == null)
-			{
+			if( reader.Value == null )
 				return null;
-			}
 			var dataString = reader.Value.ToString();
-			var date = DateTimeSerializeHelper.DeserializeDateTime(dataString);
+			var date = DateTimeSerializeHelper.DeserializeDateTime( dataString );
 
 			return date;
 		}

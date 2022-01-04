@@ -24,6 +24,27 @@ namespace ShipStationAccess.V2.Services
 			return endpoint;
 		}
 
+		public static string CreateStoreIdOrderNumberParams( string storeId, string orderId )
+		{
+			var endpoint = string.Format( "?{0}={1}&{2}={3}",
+				ShipStationParam.StoreId.Name, storeId,
+				ShipStationParam.OrderNumber.Name, orderId );
+			return endpoint;
+		}
+
+		public static string CreateOrderShipmentsParams( string orderId, bool includeShipmentItems = true )
+		{
+			var endpoint = string.Format( "?{0}={1}&{2}={3}",
+				ShipStationParam.OrderId.Name, orderId,
+				ShipStationParam.IncludeShipmentItems.Name, includeShipmentItems );
+			return endpoint;
+		}
+
+		public static string CreateOrderFulfillmentsParams( string orderId )
+		{
+			return string.Format( "?{0}={1}", ShipStationParam.OrderId.Name, orderId );
+		}
+
 		public static string CreateGetNextPageParams( ShipStationCommandConfig config )
 		{
 			var endpoint = string.Format( "?{0}={1}&{2}={3}",
