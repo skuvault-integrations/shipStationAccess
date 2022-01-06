@@ -22,10 +22,11 @@ $src_dir = "$BuildRoot\src"
 $solution_file = "$src_dir\$project_name\$project_name.csproj"
 	
 # Use MSBuild.
-Set-Alias MSBuild16 (Join-Path -Path (Get-VSSetupInstance | Where-Object {$_.DisplayName -eq 'Visual Studio Professional 2019'} | select InstallationPath | Select-Object -first 1).InstallationPath -ChildPath "MSBuild\Current\Bin\MSBuild.exe")
+Set-Alias MSBuild (Join-Path -Path (Get-VSSetupInstance | select InstallationPath | Select-Object -first 1).InstallationPath -ChildPath "MSBuild\Current\Bin\MSBuild.exe")
+
 
 task Clean { 
-	exec { MSBuild16 "$solution_file" /t:Clean /p:Configuration=Release /p:Platform="AnyCPU" /v:quiet } 
+	exec { MSBuild "$solution_file" /t:Clean /p:Configuration=Release /p:Platform="AnyCPU" /v:quiet } 
 	Remove-Item -force -recurse $build_dir -ErrorAction SilentlyContinue | Out-Null
 }
 
@@ -36,7 +37,7 @@ task Init Clean, {
 }
 
 task Build {
-	exec { MSBuild16 "$solution_file" /t:Build /p:Configuration=Release /p:Platform="AnyCPU" /v:minimal /p:OutDir="$build_artifacts_dir\" }
+	exec { MSBuild "$solution_file" /t:Build /p:Configuration=Release /p:Platform="AnyCPU" /v:minimal /p:OutDir="$build_artifacts_dir\" }
 }
 
 task Package  {
