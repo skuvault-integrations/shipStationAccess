@@ -251,6 +251,7 @@ namespace ShipStationAccess.V2.Services
 			}
 			catch( Exception ex )
 			{
+				RefreshLastNetworkActivityTime();
 				var webException = WebExtensions.GetWebException( ex );
 				if ( webException != null )
 				{

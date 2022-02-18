@@ -33,7 +33,6 @@ namespace ShipStationAccess.V2.Services
 			return JsonConvert.DeserializeObject<T>(jsonContent, JsonSerializerSettings);
 		}
 	}
-	#region Custom serialization
 	public static class DateTimeSerializeHelper
 	{
 		private static readonly TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById( "Pacific Standard Time" );
