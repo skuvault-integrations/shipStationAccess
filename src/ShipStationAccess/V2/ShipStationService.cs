@@ -106,7 +106,11 @@ namespace ShipStationAccess.V2
 					var curOrder = order;
 					if( processedOrderIds.Contains( curOrder.OrderId ) )
 						continue;
-
+					
+					// Orders with status 'rejected_fulfillment' should be ignored. VT-5738
+					if( curOrder.OrderStatus == ShipStationOrderStatusEnum.rejected_fulfillment )
+						continue;
+					
 					if( processOrder != null )
 						curOrder = processOrder( curOrder );
 					orders.Add( curOrder );
