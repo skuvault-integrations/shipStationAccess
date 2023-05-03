@@ -268,11 +268,17 @@ namespace ShipStationAccess.V2.Services
 		private void ThrowIfError( string url, HttpResponseMessage responseMessage, string responseContent )
 		{
 			var serverStatusCode = responseMessage.StatusCode;
+			var apiKey = this._credentials.ApiKey;
+			const int maxApiKeyChars = 10;
+			
 			if( serverStatusCode == HttpStatusCode.Unauthorized )
 			{
-				ShipStationLogger.Log.Info( "[{IntegrationName}] [{Version}]\tRequest to '{Url}' returned HTTP Error with the response content: '{ResponseContent}'. Request Headers: {RequestMessageHeaders}, Response Headers: {ResponseMessageHeaders}",
+				// All ApiKey information will be removed later in GUARD-2930. For now, we only have this field to identify the account.
+				var apiKeyFirstTen = apiKey?.Length > 10 ? apiKey.Substring(0, maxApiKeyChars) + "..." : apiKey;
+				ShipStationLogger.Log.Info( "[{IntegrationName}] [{Version}] [{TruncatedApiKey}]\tRequest to '{Url}' returned HTTP Error with the response content: '{ResponseContent}'. Request Headers: {@RequestMessageHeaders}, Response Headers: {@ResponseMessageHeaders}",
 					Constants.IntegrationName,
 					Constants.VersionInfo,
+					apiKeyFirstTen,
 					url,
 					responseContent,
 					responseMessage?.RequestMessage?.Headers,
