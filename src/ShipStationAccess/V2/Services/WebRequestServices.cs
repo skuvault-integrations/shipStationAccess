@@ -270,17 +270,28 @@ namespace ShipStationAccess.V2.Services
 			var serverStatusCode = responseMessage.StatusCode;
 			if( serverStatusCode == HttpStatusCode.Unauthorized )
 			{
-				//ShipStationLogger.Log.Info( "[shipstation]\tRequest to '{url}' returned HTTP Error with the response content: '{responseContent}'. Request Headers: {responseMessage.RequestMessage.Headers}, Response Headers: {responseMessage.Headers}", url, responseContent, responseMessage.RequestMessage.Headers, responseMessage.Headers );
-				ShipStationLogger.Log.Info( $"[shipstation]\tRequest to '{url}' returned HTTP Error with the response content: '{responseContent}'. Request Headers: {responseMessage.RequestMessage.Headers}, Response Headers: {responseMessage.Headers}" );
+				ShipStationLogger.Log.Info( "[{Channel}] [{Version}]\tRequest to '{Url}' returned HTTP Error with the response content: '{ResponseContent}'. Request Headers: {RequestMessageHeaders}, Response Headers: {ResponseMessageHeaders}", 
+					Constants.ChannelName, 
+					Constants.VersionInfo,
+					url,
+					responseContent, 
+					responseMessage?.RequestMessage?.Headers,
+					responseMessage?.Headers );
 				throw new ShipStationUnauthorizedException();
 			}
 
-			if( IsRequestThrottled( responseMessage, responseContent, out int rateResetInSeconds ) )
-			{
-				ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}':\n{resetInSeconds} - {isThrottled}\n{response}",
-									this._credentials.ApiKey, url, rateResetInSeconds, true, responseContent );
-				throw new ShipStationThrottleException( rateResetInSeconds );
-			}
+			if( !this.IsRequestThrottled( responseMessage, responseContent, out int rateResetInSeconds ) )
+				return;
+			
+			ShipStationLogger.Log.Info( "[{Channel}] [{Version}]\tResponse for apiKey '{ApiKey}' and url '{Uri}':\n{ResetInSeconds} - {IsThrottled}\n{Response}",
+				Constants.ChannelName, 
+				Constants.VersionInfo,
+				this._credentials.ApiKey, 
+				url, 
+				rateResetInSeconds, 
+				true, 
+				responseContent );
+			throw new ShipStationThrottleException( rateResetInSeconds );
 		}
 
 		private bool IsRequestThrottled( HttpResponseMessage responseMessage, string responseContent, out int rateResetInSeconds )
