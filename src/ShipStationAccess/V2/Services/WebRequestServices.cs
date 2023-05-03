@@ -268,11 +268,14 @@ namespace ShipStationAccess.V2.Services
 		private void ThrowIfError( string url, HttpResponseMessage responseMessage, string responseContent )
 		{
 			var serverStatusCode = responseMessage.StatusCode;
-
-			if ( serverStatusCode == HttpStatusCode.Unauthorized )
+			if( serverStatusCode == HttpStatusCode.Unauthorized )
+			{
+				//ShipStationLogger.Log.Info( "[shipstation]\tRequest to '{url}' returned HTTP 401 Error with the response content: '{responseContent}'. Request Headers: {responseMessage.RequestMessage.Headers}, Response Headers: {responseMessage.Headers}", url, responseContent, responseMessage.RequestMessage.Headers, responseMessage.Headers );
+				ShipStationLogger.Log.Info( $"[shipstation]\tRequest to '{url}' returned HTTP 401 Error with the response content: '{responseContent}'. Request Headers: {responseMessage.RequestMessage.Headers}, Response Headers: {responseMessage.Headers}" );
 				throw new ShipStationUnauthorizedException();
+			}
 
-			if ( IsRequestThrottled( responseMessage, responseContent, out int rateResetInSeconds ) )
+			if( IsRequestThrottled( responseMessage, responseContent, out int rateResetInSeconds ) )
 			{
 				ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}':\n{resetInSeconds} - {isThrottled}\n{response}",
 									this._credentials.ApiKey, url, rateResetInSeconds, true, responseContent );
