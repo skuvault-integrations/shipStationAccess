@@ -270,8 +270,8 @@ namespace ShipStationAccess.V2.Services
 			var serverStatusCode = responseMessage.StatusCode;
 			if( serverStatusCode == HttpStatusCode.Unauthorized )
 			{
-				//ShipStationLogger.Log.Info( "[shipstation]\tRequest to '{url}' returned HTTP 401 Error with the response content: '{responseContent}'. Request Headers: {responseMessage.RequestMessage.Headers}, Response Headers: {responseMessage.Headers}", url, responseContent, responseMessage.RequestMessage.Headers, responseMessage.Headers );
-				ShipStationLogger.Log.Info( $"[shipstation]\tRequest to '{url}' returned HTTP 401 Error with the response content: '{responseContent}'. Request Headers: {responseMessage.RequestMessage.Headers}, Response Headers: {responseMessage.Headers}" );
+				//ShipStationLogger.Log.Info( "[shipstation]\tRequest to '{url}' returned HTTP Error with the response content: '{responseContent}'. Request Headers: {responseMessage.RequestMessage.Headers}, Response Headers: {responseMessage.Headers}", url, responseContent, responseMessage.RequestMessage.Headers, responseMessage.Headers );
+				ShipStationLogger.Log.Info( $"[shipstation]\tRequest to '{url}' returned HTTP Error with the response content: '{responseContent}'. Request Headers: {responseMessage.RequestMessage.Headers}, Response Headers: {responseMessage.Headers}" );
 				throw new ShipStationUnauthorizedException();
 			}
 
