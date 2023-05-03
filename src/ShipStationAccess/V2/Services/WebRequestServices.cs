@@ -270,11 +270,11 @@ namespace ShipStationAccess.V2.Services
 			var serverStatusCode = responseMessage.StatusCode;
 			if( serverStatusCode == HttpStatusCode.Unauthorized )
 			{
-				ShipStationLogger.Log.Info( "[{Channel}] [{Version}]\tRequest to '{Url}' returned HTTP Error with the response content: '{ResponseContent}'. Request Headers: {RequestMessageHeaders}, Response Headers: {ResponseMessageHeaders}", 
-					Constants.ChannelName, 
+				ShipStationLogger.Log.Info( "[{IntegrationName}] [{Version}]\tRequest to '{Url}' returned HTTP Error with the response content: '{ResponseContent}'. Request Headers: {RequestMessageHeaders}, Response Headers: {ResponseMessageHeaders}",
+					Constants.IntegrationName,
 					Constants.VersionInfo,
 					url,
-					responseContent, 
+					responseContent,
 					responseMessage?.RequestMessage?.Headers,
 					responseMessage?.Headers );
 				throw new ShipStationUnauthorizedException();
@@ -283,13 +283,13 @@ namespace ShipStationAccess.V2.Services
 			if( !this.IsRequestThrottled( responseMessage, responseContent, out int rateResetInSeconds ) )
 				return;
 			
-			ShipStationLogger.Log.Info( "[{Channel}] [{Version}]\tResponse for apiKey '{ApiKey}' and url '{Uri}':\n{ResetInSeconds} - {IsThrottled}\n{Response}",
-				Constants.ChannelName, 
+			ShipStationLogger.Log.Info( "[{IntegrationName}] [{Version}]\tResponse for apiKey '{ApiKey}' and url '{Uri}':\n{ResetInSeconds} - {IsThrottled}\n{Response}",
+				Constants.IntegrationName,
 				Constants.VersionInfo,
-				this._credentials.ApiKey, 
-				url, 
-				rateResetInSeconds, 
-				true, 
+				this._credentials.ApiKey,
+				url,
+				rateResetInSeconds,
+				true,
 				responseContent );
 			throw new ShipStationThrottleException( rateResetInSeconds );
 		}

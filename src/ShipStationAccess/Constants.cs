@@ -9,6 +9,6 @@ namespace ShipStationAccess
     internal static class Constants
     {
         public static readonly string VersionInfo = FileVersionInfo.GetVersionInfo( Assembly.GetExecutingAssembly().Location ).FileVersion;
-        public const string ChannelName = "shipstation";
+        public const string IntegrationName = "shipstation";
     }
 }
