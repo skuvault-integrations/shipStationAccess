@@ -81,6 +81,7 @@ task NuGet Package, Version, {
 		<owners>Agile Harbor</owners>
 		<projectUrl>https://github.com/agileharbor/$project_name</projectUrl>
 		<licenseUrl>https://raw.github.com/agileharbor/$project_name/master/License.txt</licenseUrl>
+		<repository type="git" url="https://github.com/skuvault-integrations/shipStationAccess.git" />
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<copyright>Copyright (C) Agile Harbor, LLC</copyright>
 		<summary>$text</summary>
@@ -112,4 +113,4 @@ task NuGet Package, Version, {
 	}
 }
 
-task . Init, Build, Package, Zip, NuGet
+task . Init, Build, Package, NuGet
