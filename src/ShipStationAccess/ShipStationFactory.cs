@@ -1,6 +1,7 @@
 ﻿using CuttingEdge.Conditions;
 using ShipStationAccess.V2;
 using ShipStationAccess.V2.Models;
+using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccess
 {
@@ -25,7 +26,8 @@ namespace ShipStationAccess
 			if( string.IsNullOrWhiteSpace( credentials.PartnerKey ) )
 				credentials.PartnerKey = this.PartnerKey;
 
-			return new ShipStationService( credentials, syncRunContext, operationsTimeouts );
+			var webRequestServices = new WebRequestServices( credentials, syncRunContext );
+			return new ShipStationService( webRequestServices, syncRunContext, operationsTimeouts );
 		}
 	}
 }

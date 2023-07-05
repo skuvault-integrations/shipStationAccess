@@ -2,40 +2,14 @@ using System;
 using System.Linq;
 using System.Threading;
 using FluentAssertions;
-using LINQtoCSV;
-using Netco.Logging;
-using Netco.Logging.SerilogIntegration;
 using NUnit.Framework;
-using Serilog;
-using ShipStationAccess;
-using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Order;
 using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccessTests.Orders
 {
-	public class SerializationTests
+	public class SerializationTests: BaseTest
 	{
-		private readonly IShipStationFactory ShipStationFactory = new ShipStationFactory();
-		private ShipStationCredentials _credentials;
-
-		[ SetUp ]
-		public void Init()
-		{
-			const string credentialsFilePath = @"..\..\Files\ShipStationCredentials.csv";
-			Log.Logger = new LoggerConfiguration()
-				.Destructure.ToMaximumDepth( 100 )
-				.MinimumLevel.Verbose()
-				.WriteTo.Console().CreateLogger();
-			NetcoLogger.LoggerFactory = new SerilogLoggerFactory( Log.Logger );
-
-			var cc = new CsvContext();
-			var testConfig = cc.Read< TestConfig >( credentialsFilePath, new CsvFileDescription { FirstLineHasColumnNames = true } ).FirstOrDefault();
-
-			if( testConfig != null )
-				this._credentials = new ShipStationCredentials( testConfig.ApiKey, testConfig.ApiSecret );
-		}
-
 		[ Test ]
 		public void Date_Deserialization()
 		{
@@ -82,8 +56,7 @@ namespace ShipStationAccessTests.Orders
 		[ Test ]
 		public void SerializationOrderTest()
 		{
-			var service = this.ShipStationFactory.CreateServiceV2( this._credentials );
-			var orders = service.GetOrders( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, CancellationToken.None );
+			var orders = this._shipStationService.GetOrders( DateTime.UtcNow.AddDays( -7 ), DateTime.UtcNow, CancellationToken.None );
 			var testOrder = orders.First();
 
 			var serializedOrder = testOrder.SerializeToJson();

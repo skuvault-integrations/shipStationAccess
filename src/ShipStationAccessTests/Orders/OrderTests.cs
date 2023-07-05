@@ -5,15 +5,10 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using LINQtoCSV;
 using Netco.Extensions;
-using Netco.Logging;
-using Netco.Logging.SerilogIntegration;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
-using Serilog;
-using ShipStationAccess;
 using ShipStationAccess.V2;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
@@ -26,19 +21,8 @@ namespace ShipStationAccessTests.Orders
 {
 	public class OrderTests : BaseTest
 	{
-		private ShipStationCredentials _credentials;
-		private string _testOrderWithShipments = "564221696";
-		private string _testOrderWithFulfillments = "576752152";
-
-		private IShipStationService _shipStationService;
-
-		[ SetUp ]
-		public void Init()
-		{
-			this._credentials = base.ReadCredentials();
-			if ( _credentials != null )
-				_shipStationService = this.ShipStationFactory.CreateServiceV2( this._credentials );
-		}
+		private const string TestOrderWithShipments = "564221696";
+		private const string TestOrderWithFulfillments = "576752152";
 
 		[Test]
 		public void DeserializeOrderWithNullablePaymentDateTest()
@@ -79,7 +63,7 @@ namespace ShipStationAccessTests.Orders
 
 			orders.Count().Should().BeGreaterThan( 0 );
 		}
-		
+
 		[ Test ]
 		public async Task GetOrdersWithoutShipmentsAndFulfillmentsAsync()
 		{
@@ -95,8 +79,8 @@ namespace ShipStationAccessTests.Orders
 		{
 			var totalOrders = 120;
 			var ordersPosWithErrors = new int[] { 17, 50, 67, 119 };
-			var serverStub = PrepareShipStationServerStub( totalOrders, ordersPosWithErrors );
-			var service = new ShipStationService( this._credentials, new ShipStationTimeouts(), serverStub );
+			var serverStub = this.PrepareShipStationServerStub( totalOrders, ordersPosWithErrors );
+			var service = new ShipStationService( serverStub, this.SyncRunContext, new ShipStationTimeouts() );
 			var orders = await service.GetOrdersAsync( DateTime.UtcNow.AddDays( -1 ), DateTime.UtcNow, CancellationToken.None, getShipmentsAndFulfillments: true );
 
 			orders.Count().Should().Be( totalOrders - ordersPosWithErrors.Length );
@@ -108,7 +92,7 @@ namespace ShipStationAccessTests.Orders
 			var ordersPosWithErrors = new int[] { 62, 84 };
 			var totalExpectedOrders = 100;
 			var serverStub = PrepareShipStationServerStub( totalExpectedOrders, ordersPosWithErrors );
-			var service = new ShipStationService( this._credentials, new ShipStationTimeouts(), serverStub );
+			var service = new ShipStationService( serverStub, this.SyncRunContext, new ShipStationTimeouts() );
 			var createdOrdersResponse = await service.GetCreatedOrdersAsync( DateTime.UtcNow.AddDays( -30 ), DateTime.UtcNow, CancellationToken.None );
 
 			createdOrdersResponse.ReadErrors.Count.Should().Be( ordersPosWithErrors.Length );
@@ -220,7 +204,7 @@ namespace ShipStationAccessTests.Orders
 		[ Test ]
 		public async Task GetOrderShipmentsAsync()
 		{
-			var orderShipments = await this._shipStationService.GetOrderShipmentsByIdAsync( this._testOrderWithShipments, CancellationToken.None );
+			var orderShipments = await this._shipStationService.GetOrderShipmentsByIdAsync( TestOrderWithShipments, CancellationToken.None );
 
 			orderShipments.Count().Should().BeGreaterThan( 0 );
 		}
@@ -228,7 +212,7 @@ namespace ShipStationAccessTests.Orders
 		[ Test ]
 		public async Task GetOrderFulfillmentsAsync()
 		{
-			var orderFulfillments = await this._shipStationService.GetOrderFulfillmentsByIdAsync( this._testOrderWithFulfillments, CancellationToken.None );
+			var orderFulfillments = await this._shipStationService.GetOrderFulfillmentsByIdAsync( TestOrderWithFulfillments, CancellationToken.None );
 
 			orderFulfillments.Count().Should().BeGreaterThan( 0 );
 		}
