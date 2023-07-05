@@ -30,7 +30,7 @@ namespace ShipStationAccess.V2
 
 		public ShipStationService( ShipStationCredentials credentials, SyncRunContext syncRunContext, ShipStationTimeouts timeouts, IWebRequestServices webServices = null )
 		{
-			this._webRequestServices = webServices ?? new WebRequestServices( credentials );
+			this._webRequestServices = webServices ?? new WebRequestServices( credentials, syncRunContext );
 			this._syncRunContext = syncRunContext;
 			this._timeouts = timeouts;
 		}

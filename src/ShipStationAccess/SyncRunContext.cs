@@ -18,23 +18,23 @@ namespace ShipStationAccess
 
 		public SyncRunContext( long tenantId, long? channelAccountId, string correlationId )
 		{
-			TenantId = tenantId;
-			ChannelAccountId = channelAccountId;
-			CorrelationId = correlationId;
-			ValidationHelper.ThrowOnValidationErrors< SyncRunContext >( GetValidationErrors() );
+			this.TenantId = tenantId;
+			this.ChannelAccountId = channelAccountId;
+			this.CorrelationId = correlationId;
+			ValidationHelper.ThrowOnValidationErrors< SyncRunContext >( this.GetValidationErrors() );
 		}
 
 		private IEnumerable< string > GetValidationErrors()
 		{
 			var validationErrors = new List< string >();
-			if( TenantId == default )
+			if( this.TenantId == default )
 			{
-				validationErrors.Add( $"{nameof(TenantId)} is 0" );
+				validationErrors.Add( $"{nameof(this.TenantId)} is 0" );
 			}
 
-			if( string.IsNullOrWhiteSpace( CorrelationId ) )
+			if( string.IsNullOrWhiteSpace( this.CorrelationId ) )
 			{
-				validationErrors.Add( $"{nameof(CorrelationId)} is empty" );
+				validationErrors.Add( $"{nameof(this.CorrelationId)} is empty" );
 			}
 
 			return validationErrors;

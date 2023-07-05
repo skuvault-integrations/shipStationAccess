@@ -17,22 +17,26 @@ namespace ShipStationAccess.V2.Services
 {
 	internal sealed class WebRequestServices : IWebRequestServices
 	{
-		private readonly ShipStationCredentials _credentials;
+		private const int TooManyRequestsErrorCode = 429;
+		private const int DefaultThrottlingWaitTimeInSeconds = 60;
+		private const int MaxHttpRequestTimeoutInMinutes = 30;
+		private const int MaxPostDataAttemptsCount = 20;
 
-		public HttpClient HttpClient { get; private set; }
+		private readonly ShipStationCredentials _credentials;
+		private readonly SyncRunContext _syncRunContext;
+
+		private HttpClient HttpClient{ get; }
 		public DateTime? LastNetworkActivityTime { get; private set; }
 
-		public const int TooManyRequestsErrorCode = 429;
-		public const int DefaultThrottlingWaitTimeInSeconds = 60;
-		public const int MaxHttpRequestTimeoutInMinutes = 30;
 
-		public WebRequestServices( ShipStationCredentials credentials )
+		public WebRequestServices( ShipStationCredentials credentials, SyncRunContext syncRunContext )
 		{
 			this._credentials = credentials;
-			
+			this._syncRunContext = syncRunContext;
+
 			this.HttpClient = new HttpClient();
 			this.HttpClient.Timeout = TimeSpan.FromMinutes( MaxHttpRequestTimeoutInMinutes );
-			SetAuthorizationHeader();
+			this.SetAuthorizationHeader();
 
 			this.InitSecurityProtocol();
 		}
@@ -54,7 +58,7 @@ namespace ShipStationAccess.V2.Services
 		/// <returns></returns>
 		public T GetResponse< T >( ShipStationCommand command, string commandParams, CancellationToken token, int? operationTimeout = null )
 		{
-			return GetResponseAsync< T >( command, commandParams, token, operationTimeout ).GetAwaiter().GetResult();
+			return this.GetResponseAsync< T >( command, commandParams, token, operationTimeout ).GetAwaiter().GetResult();
 		}
 
 		/// <summary>
@@ -69,7 +73,7 @@ namespace ShipStationAccess.V2.Services
 		public async Task< T > GetResponseAsync< T >( ShipStationCommand command, string commandParams, CancellationToken token, int? operationTimeout = null )
 		{
 			var url = string.Concat( this._credentials.Host, command.Command, commandParams );
-			var response = await GetRawResponseAsync( url, token, operationTimeout ).ConfigureAwait( false );
+			var response = await this.GetRawResponseAsync( url, token, operationTimeout ).ConfigureAwait( false );
 			if ( !string.IsNullOrWhiteSpace( response ) )
 				return this.ParseResponse< T >( response );
 
@@ -85,7 +89,7 @@ namespace ShipStationAccess.V2.Services
 		/// <param name="operationTimeout"></param>
 		public void PostData( ShipStationCommand command, string jsonContent, CancellationToken token, int? operationTimeout = null )
 		{
-			PostDataAsync( command, jsonContent, token, operationTimeout ).Wait();
+			this.PostDataAsync( command, jsonContent, token, operationTimeout ).Wait();
 		}
 
 		/// <summary>
@@ -99,7 +103,7 @@ namespace ShipStationAccess.V2.Services
 		public Task PostDataAsync( ShipStationCommand command, string jsonContent, CancellationToken token, int? operationTimeout = null )
 		{
 			var url = string.Concat( this._credentials.Host, command.Command );
-			return PostRawDataAsync( url, jsonContent, token, false, operationTimeout );
+			return this.PostRawDataAsync( url, jsonContent, token, false, operationTimeout );
 		}
 
 		/// <summary>
@@ -114,7 +118,7 @@ namespace ShipStationAccess.V2.Services
 		/// <returns></returns>
 		public T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null )
 		{
-			return PostDataAndGetResponseAsync< T >( command, jsonContent, token, shouldGetExceptionMessage, operationTimeout ).GetAwaiter().GetResult();
+			return this.PostDataAndGetResponseAsync< T >( command, jsonContent, token, shouldGetExceptionMessage, operationTimeout ).GetAwaiter().GetResult();
 		}
 
 		/// <summary>
@@ -131,7 +135,7 @@ namespace ShipStationAccess.V2.Services
 		{
 			var url = string.Concat( this._credentials.Host, command.Command );
 			
-			var response = await PostRawDataAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout );
+			var response = await this.PostRawDataAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout );
 			if ( !string.IsNullOrWhiteSpace( response ) )
 				return this.ParseResponse< T >( response );
 
@@ -152,21 +156,20 @@ namespace ShipStationAccess.V2.Services
 		{
 			var url = string.Concat( this._credentials.Host, command.Command );
 			int numberRequest = 0;
-			while( numberRequest < 20 )
+			while( numberRequest < MaxPostDataAttemptsCount )
 			{
 				numberRequest++;
-				var data = PostRawDataAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout, useShipStationPartnerHeader: true ).Result;
+				var data = this.PostRawDataAsync( url, jsonContent, token, shouldGetExceptionMessage, operationTimeout, useShipStationPartnerHeader: true ).Result;
 				if ( !string.IsNullOrWhiteSpace( data ) )
 					return this.ParseResponse< T >( data );
 			}
 
-			throw new Exception( "More 20 attempts" );
+			throw new Exception( $"More {MaxPostDataAttemptsCount} attempts" );
 		}
 
 		/// <summary>
 		///	Get data from ShipStation's endpoint async
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
 		/// <param name="url"></param>
 		/// <param name="token"></param>
 		/// <param name="operationTimeout"></param>
@@ -178,15 +181,23 @@ namespace ShipStationAccess.V2.Services
 				if ( operationTimeout != null )
 					cts.CancelAfter( operationTimeout.Value );
 
-				RefreshLastNetworkActivityTime();
+				this.RefreshLastNetworkActivityTime();
 
 				var response = await this.HttpClient.GetAsync( url, cts.Token ).ConfigureAwait( false );
 				var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
 
-				RefreshLastNetworkActivityTime();
-				ThrowIfError( url, response, responseContent );
+				this.RefreshLastNetworkActivityTime();
+				this.ThrowIfError( url, response, responseContent );
 
-				ShipStationLogger.Log.Info( "[shipstation]\tResponse for apiKey '{apiKey}' and url '{uri}' with timeout '{operationTimeout}': {response}", this._credentials.ApiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, responseContent );
+				ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Response for url '{Uri}' with timeout '{OperationTimeout}': {Response}", 
+					Constants.ChannelName,
+					Constants.VersionInfo, 
+					this._syncRunContext.TenantId,
+					this._syncRunContext.ChannelAccountId,
+					this._syncRunContext.CorrelationId,
+					nameof(WebRequestServices),
+					nameof(this.GetRawResponseAsync),
+					url, GetOperationTimeout( operationTimeout ), responseContent );
 
 				return responseContent;
 			}
@@ -195,7 +206,6 @@ namespace ShipStationAccess.V2.Services
 		/// <summary>
 		///	Post data to ShipStation's API endpoint async
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
 		/// <param name="url"></param>
 		/// <param name="payload"></param>
 		/// <param name="token"></param>
@@ -204,9 +214,9 @@ namespace ShipStationAccess.V2.Services
 		/// <returns></returns>
 		private async Task< string > PostRawDataAsync( string url, string payload, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null, bool useShipStationPartnerHeader = false )
 		{
-			this.LogPostInfo( this._credentials.ApiKey, url, payload, operationTimeout );
-			RefreshLastNetworkActivityTime();
-						
+			this.LogPostInfo( url, payload, operationTimeout );
+			this.RefreshLastNetworkActivityTime();
+
 			try
 			{
 				using( var cts = CancellationTokenSource.CreateLinkedTokenSource( token ) )
@@ -215,28 +225,28 @@ namespace ShipStationAccess.V2.Services
 						cts.CancelAfter( operationTimeout.Value * 1000 );
 
 					if ( useShipStationPartnerHeader )
-						SetAuthorizationHeader( true );
+						this.SetAuthorizationHeader( true );
 
 					var requestContent = new StringContent( payload, Encoding.UTF8, "application/json" );
 
 					var responseMessage = await this.HttpClient.PostAsync( url, requestContent, cts.Token ).ConfigureAwait( false );
 					var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait( false );
 
-					RefreshLastNetworkActivityTime();
-					ThrowIfError( url, responseMessage, responseContent );
+					this.RefreshLastNetworkActivityTime();
+					this.ThrowIfError( url, responseMessage, responseContent );
 
-					this.LogUpdateInfo( this._credentials.ApiKey, url, responseMessage.StatusCode, payload, operationTimeout );
+					this.LogUpdateInfo( url, responseMessage.StatusCode, payload, operationTimeout );
 					return responseContent;
 				}
 			}
 			catch( Exception ex )
 			{
-				RefreshLastNetworkActivityTime();
+				this.RefreshLastNetworkActivityTime();
 				var webException = WebExtensions.GetWebException( ex );
 				if ( webException != null )
 				{
 					var serverResponseError = webException.Response?.GetResponseString() ?? string.Empty;
-					this.LogPostError( this._credentials.ApiKey, url, webException.Response?.GetHttpStatusCode() ?? HttpStatusCode.InternalServerError, payload, serverResponseError, operationTimeout );
+					this.LogPostError( url, webException.Response?.GetHttpStatusCode() ?? HttpStatusCode.InternalServerError, payload, serverResponseError, operationTimeout );
 					if( shouldGetExceptionMessage )
 						throw new Exception( this.GetExceptionMessageFromResponse( webException, serverResponseError ), ex );
 				}
@@ -248,35 +258,33 @@ namespace ShipStationAccess.V2.Services
 		private void ThrowIfError( string url, HttpResponseMessage responseMessage, string responseContent )
 		{
 			var serverStatusCode = responseMessage.StatusCode;
-			var apiKey = this._credentials.ApiKey;
-			const int maxApiKeyChars = 10;
-			
+
 			if( serverStatusCode == HttpStatusCode.Unauthorized )
 			{
-				// All ApiKey information will be removed later in GUARD-2930. For now, we only have this field to identify the account.
-				var apiKeyFirstTen = apiKey?.Length > 10 ? apiKey.Substring(0, maxApiKeyChars) + "..." : apiKey;
-				ShipStationLogger.Log.Info( "[{IntegrationName}] [{Version}] [{TruncatedApiKey}]\tRequest to '{Url}' returned HTTP Error with the response content: '{ResponseContent}'. Request Headers: {@RequestMessageHeaders}, Response Headers: {@ResponseMessageHeaders}",
-					Constants.IntegrationName,
-					Constants.VersionInfo,
-					apiKeyFirstTen,
-					url,
-					responseContent,
-					responseMessage?.RequestMessage?.Headers,
-					responseMessage?.Headers );
+				ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Request to '{Url}' returned HTTP Error with the response content: '{ResponseContent}'. Request Headers: {@RequestMessageHeaders}, Response Headers: {@ResponseMessageHeaders}",
+					Constants.ChannelName,
+					Constants.VersionInfo, 
+					this._syncRunContext.TenantId,
+					this._syncRunContext.ChannelAccountId,
+					this._syncRunContext.CorrelationId,
+					nameof(WebRequestServices),
+					nameof(this.ThrowIfError),
+					url, responseContent, responseMessage?.RequestMessage?.Headers, responseMessage?.Headers );
 				throw new ShipStationUnauthorizedException();
 			}
 
-			if( !this.IsRequestThrottled( responseMessage, responseContent, out int rateResetInSeconds ) )
+			if( !this.IsRequestThrottled( responseMessage, responseContent, out var rateResetInSeconds ) )
 				return;
-			
-			ShipStationLogger.Log.Info( "[{IntegrationName}] [{Version}]\tResponse for apiKey '{ApiKey}' and url '{Uri}':\n{ResetInSeconds} - {IsThrottled}\n{Response}",
-				Constants.IntegrationName,
+
+			ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Response for url '{Uri}':\n{ResetInSeconds} - {IsThrottled}\n{Response}",
+				Constants.ChannelName,
 				Constants.VersionInfo,
-				this._credentials.ApiKey,
-				url,
-				rateResetInSeconds,
-				true,
-				responseContent );
+				this._syncRunContext.TenantId,
+				this._syncRunContext.ChannelAccountId,
+				this._syncRunContext.CorrelationId,
+				nameof(WebRequestServices),
+				nameof(this.ThrowIfError),
+				url, rateResetInSeconds, true, responseContent );
 			throw new ShipStationThrottleException( rateResetInSeconds );
 		}
 
@@ -297,7 +305,7 @@ namespace ShipStationAccess.V2.Services
 					int.TryParse( rateLimitHeaderValue, out rateResetInSeconds );
 				}
 			}
-				
+
 			return true;
 		}
 
@@ -361,24 +369,43 @@ namespace ShipStationAccess.V2.Services
 			return result;
 		}
 
-		private void LogUpdateInfo( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, int? operationTimeout )
+		private void LogUpdateInfo( string url, HttpStatusCode statusCode, string jsonContent, int? operationTimeout )
 		{
-			ShipStationLogger.Log.Info( "[shipstation]\tPOSTing call for the apiKey '{apiKey}' and url '{url}' with timeout '{operationTimeout}' has been completed with code '{code}'.\n{content}", apiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, Convert.ToInt32( statusCode ), jsonContent );
+			ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "POSTing call for the url '{Url}' with timeout '{OperationTimeout}' has been completed with code '{Code}'.\n{content}",
+				Constants.ChannelName,
+				Constants.VersionInfo, 
+				this._syncRunContext.TenantId,
+				this._syncRunContext.ChannelAccountId,
+				this._syncRunContext.CorrelationId,
+				nameof(WebRequestServices),
+				nameof(this.LogUpdateInfo),
+				url, GetOperationTimeout( operationTimeout ), Convert.ToInt32( statusCode ), jsonContent );
 		}
 
-		private void LogPostInfo( string apiKey, string url, string jsonContent, int? operationTimeout )
+		private void LogPostInfo( string url, string jsonContent, int? operationTimeout )
 		{
-			ShipStationLogger.Log.Info( "[shipstation]\tPOSTed data for the apiKey '{apiKey}' and url '{url}' with timeout '{operationTimeout}':\n{jsonContent}", apiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, jsonContent );
+			ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "POSTed data for the url '{Url}' with timeout '{OperationTimeout}':\n{JsonContent}", 
+				Constants.ChannelName,
+				Constants.VersionInfo, 
+				this._syncRunContext.TenantId,
+				this._syncRunContext.ChannelAccountId,
+				this._syncRunContext.CorrelationId,
+				nameof(WebRequestServices),
+				nameof(this.LogPostInfo),
+				url, GetOperationTimeout( operationTimeout ), jsonContent );
 		}
 
-		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, WebException x )
+		private void LogPostError( string url, HttpStatusCode statusCode, string jsonContent, string responseString, int? operationTimeout )
 		{
-			ShipStationLogger.Log.Error( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', code '{message}' and response '{code}':\n{content}", apiKey, url, x.Response.GetResponseString(), Convert.ToInt32( statusCode ), jsonContent );
-		}
-
-		private void LogPostError( string apiKey, string url, HttpStatusCode statusCode, string jsonContent, string responseString, int? operationTimeout )
-		{
-			ShipStationLogger.Log.Error( "[shipstation]\tERROR POSTing data for the apiKey '{apiKey}', url '{url}', timeout '{operationTimeout}', code '{message}' and response '{code}':\n{content}", apiKey, url, operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000, responseString, Convert.ToInt32( statusCode ), jsonContent );
+			ShipStationLogger.Log.Error( Constants.LoggingCommonPrefix + "ERROR POSTing data for the  url '{Url}', timeout '{OperationTimeout}', Error '{ErrorCode}' '{ErrorMessage}'. Request ':\n{Content}",
+				Constants.ChannelName,
+				Constants.VersionInfo, 
+				this._syncRunContext.TenantId,
+				this._syncRunContext.ChannelAccountId,
+				this._syncRunContext.CorrelationId,
+				nameof(WebRequestServices),
+				nameof(this.LogPostError),
+				url, GetOperationTimeout( operationTimeout ), Convert.ToInt32( statusCode ), responseString, jsonContent );
 		}
 
 		/// <summary>
@@ -389,6 +416,8 @@ namespace ShipStationAccess.V2.Services
 		{
 			this.LastNetworkActivityTime = DateTime.UtcNow;
 		}
+
+		private static int GetOperationTimeout( int? operationTimeout ) => operationTimeout ?? MaxHttpRequestTimeoutInMinutes * 60 * 1000;
 		#endregion
 	}
 }
