@@ -19,32 +19,26 @@ using System.Threading;
 
 namespace ShipStationAccess.V2
 {
-	public sealed class ShipStationService: IShipStationService
+	internal sealed class ShipStationService: IShipStationService
 	{
 		private readonly IWebRequestServices _webRequestServices;
+		private readonly SyncRunContext _syncRunContext;
 		private readonly ShipStationTimeouts _timeouts;
 
 		// lowered max limit for less order loss on Shipsation API's internal errors
 		private const int RequestMaxLimit = 20;
 
-		public ShipStationService( ShipStationCredentials credentials, ShipStationTimeouts timeouts, IWebRequestServices webServices = null )
+		public ShipStationService( ShipStationCredentials credentials, SyncRunContext syncRunContext, ShipStationTimeouts timeouts, IWebRequestServices webServices = null )
 		{
 			this._webRequestServices = webServices ?? new WebRequestServices( credentials );
+			this._syncRunContext = syncRunContext;
 			this._timeouts = timeouts;
 		}
-
-		public ShipStationService( ShipStationCredentials credentials ) : this( credentials, new ShipStationTimeouts() ) { }
 
 		/// <summary>
 		///	Last service's network activity time. Can be used to monitor service's state.
 		/// </summary>
-		public DateTime LastActivityTime
-		{
-			get
-			{
-				return this._webRequestServices.LastNetworkActivityTime ?? DateTime.UtcNow;
-			}
-		}
+		public DateTime LastActivityTime => this._webRequestServices.LastNetworkActivityTime ?? DateTime.UtcNow;
 
 		public IEnumerable< ShipStationTag > GetTags( CancellationToken token )
 		{
@@ -145,7 +139,15 @@ namespace ShipStationAccess.V2
 					} );
 				} while( currentPage <= pagesCount );
 
-				ShipStationLogger.Log.Info( "Orders downloaded API '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", _webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+				ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Orders downloaded - {Orders}/{ExpectedOrders} orders in {Pages}/{ExpectedPages} from {Endpoint}", 
+					Constants.ChannelName,
+					Constants.VersionInfo, 
+					this._syncRunContext.TenantId,
+					this._syncRunContext.ChannelAccountId,
+					this._syncRunContext.CorrelationId,
+					nameof(ShipStationService),
+					nameof(GetOrders),
+					ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
 			};
 
 			var newOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
@@ -202,11 +204,15 @@ namespace ShipStationAccess.V2
 			await this.DownloadOrdersAsync( createdOrdersResponse, createdOrdersEndpoint, 1, RequestMaxLimit, token ).ConfigureAwait( false );
 			if ( createdOrdersResponse.Data.Any() )
 			{
-				ShipStationLogger.Log.Info( "Created orders downloaded using tenant's API key '{apiKey}' - {orders}/{expectedOrders} orders from {endpoint}", 
-					_webRequestServices.GetApiKey(), 
-					createdOrdersResponse.Data.Count(), 
-					createdOrdersResponse.TotalEntitiesExpected ?? 0,
-					createdOrdersResponse );
+				ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Created orders downloaded - {Orders}/{ExpectedOrders} orders from {Endpoint}. Response: '{Response}'",
+					Constants.ChannelName,
+					Constants.VersionInfo, 
+					this._syncRunContext.TenantId,
+					this._syncRunContext.ChannelAccountId,
+					this._syncRunContext.CorrelationId,
+					nameof(ShipStationService),
+					nameof(this.GetCreatedOrdersAsync),
+					createdOrdersResponse.Data.Count, createdOrdersResponse.TotalEntitiesExpected ?? 0, createdOrdersEndpoint, createdOrdersResponse );
 			}
 
 			return createdOrdersResponse;
@@ -219,11 +225,15 @@ namespace ShipStationAccess.V2
 			await this.DownloadOrdersAsync( modifiedOrdersResponse, modifiedOrdersEndpoint, 1, RequestMaxLimit, token ).ConfigureAwait( false );
 			if ( modifiedOrdersResponse.Data.Any() )
 			{
-				ShipStationLogger.Log.Info( "Modified orders downloaded using tenant's API key '{apiKey}' - {orders}/{expectedOrders} orders from {endpoint}", 
-									_webRequestServices.GetApiKey(), 
-									modifiedOrdersResponse.Data.Count(), 
-									modifiedOrdersResponse.TotalEntitiesExpected ?? 0, 
-									modifiedOrdersResponse );
+				ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Modified orders downloaded - {Orders}/{ExpectedOrders} orders from {Endpoint}. Response: '{Response}'",
+					Constants.ChannelName,
+					Constants.VersionInfo, 
+					this._syncRunContext.TenantId,
+					this._syncRunContext.ChannelAccountId,
+					this._syncRunContext.CorrelationId,
+					nameof(ShipStationService),
+					nameof(this.GetModifiedOrdersAsync),
+					modifiedOrdersResponse.Data.Count, modifiedOrdersResponse.TotalEntitiesExpected ?? 0, modifiedOrdersEndpoint, modifiedOrdersResponse );
 			}
 
 			return modifiedOrdersResponse;
@@ -256,7 +266,15 @@ namespace ShipStationAccess.V2
 						summary.TotalEntitiesHandled += 1;
 						currentPage++;
 
-						ShipStationLogger.Log.Warn( "Skipped order on pos {orderPos} of request {request} due to internal error on ShipStation's side", summary.TotalEntitiesHandled - 1, endPoint );
+						ShipStationLogger.Log.Warn( Constants.LoggingCommonPrefix + "Skipped order on pos {OrderPos} of request {Request} due to internal error on ShipStation's side",
+							Constants.ChannelName,
+							Constants.VersionInfo, 
+							this._syncRunContext.TenantId,
+							this._syncRunContext.ChannelAccountId,
+							this._syncRunContext.CorrelationId,
+							nameof(ShipStationService),
+							nameof(this.DownloadOrdersAsync),
+							summary.TotalEntitiesHandled - 1, endPoint );
 						continue;
 					}
 
@@ -264,9 +282,17 @@ namespace ShipStationAccess.V2
 					currentPage = PageSizeAdjuster.GetNextPageIndex( summary.TotalEntitiesHandled, currentPageSize );
 
 					summary.TotalEntitiesHandled -= summary.TotalEntitiesHandled % currentPageSize;
-					ShipStationLogger.Log.Warn( "Trying to decrease orders page size twice due to internal error on ShipStation's side. Current page size: {ordersPageSize}, orders downloaded {ordersDownloaded}", currentPageSize, summary.TotalEntitiesHandled );
+					ShipStationLogger.Log.Warn( Constants.LoggingCommonPrefix + "Trying to decrease orders page size twice due to internal error on ShipStation's side. Current page size: {OrdersPageSize}, orders downloaded {OrdersDownloaded}",
+						Constants.ChannelName,
+						Constants.VersionInfo, 
+						this._syncRunContext.TenantId,
+						this._syncRunContext.ChannelAccountId,
+						this._syncRunContext.CorrelationId,
+						nameof(ShipStationService),
+						nameof(this.DownloadOrdersAsync),
+						currentPageSize, summary.TotalEntitiesHandled );
 
-					await DownloadOrdersAsync( summary, endPoint, currentPage, currentPageSize, token ).ConfigureAwait( false );
+					await this.DownloadOrdersAsync( summary, endPoint, currentPage, currentPageSize, token ).ConfigureAwait( false );
 					return;
 				}
 
@@ -381,7 +407,15 @@ namespace ShipStationAccess.V2
 					} );
 				} while( currentPage <= pagesCount );
 
-				ShipStationLogger.Log.Info( "SS Labels Get Orders '{apiKey}' - {orders}/{expectedOrders} orders in {pages}/{expectedPages} from {endpoint}", this._webRequestServices.GetApiKey(), ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
+				ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "SS Labels Get Orders - {Orders}/{ExpectedOrders} orders in {Pages}/{ExpectedPages} from {Endpoint}",
+					Constants.ChannelName,
+					Constants.VersionInfo, 
+					this._syncRunContext.TenantId,
+					this._syncRunContext.ChannelAccountId,
+					this._syncRunContext.CorrelationId,
+					nameof(ShipStationService),
+					nameof(GetOrders),
+					ordersCount, ordersExpected, currentPage - 1, pagesCount, endPoint );
 			};
 
 			var newOrdersEndpoint = ParamsBuilder.CreateStoreIdOrderNumberParams( storeId, orderNumber );
@@ -500,9 +534,25 @@ namespace ShipStationAccess.V2
 				catch( WebException x )
 				{
 					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-						ShipStationLogger.Log.Error( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
+						ShipStationLogger.Log.Error( Constants.LoggingCommonPrefix + "Error updating order. Encountered 500 Internal Error. Order: {Order}",
+							Constants.ChannelName,
+							Constants.VersionInfo, 
+							this._syncRunContext.TenantId,
+							this._syncRunContext.ChannelAccountId,
+							this._syncRunContext.CorrelationId,
+							nameof(ShipStationService),
+							nameof(this.UpdateOrder),
+							order );
 					else if( x.Response.GetHttpStatusCode() == HttpStatusCode.NotFound )
-						ShipStationLogger.Log.Error( "Error updating order. Encountered 404 Not Found. Order: {order}", order );
+						ShipStationLogger.Log.Error( Constants.LoggingCommonPrefix + "Error updating order. Encountered 404 Not Found. Order: {Order}",
+							Constants.ChannelName,
+							Constants.VersionInfo, 
+							this._syncRunContext.TenantId,
+							this._syncRunContext.ChannelAccountId,
+							this._syncRunContext.CorrelationId,
+							nameof(ShipStationService),
+							nameof(this.UpdateOrder),
+							order );
 					else
 						throw;
 				}
@@ -523,9 +573,25 @@ namespace ShipStationAccess.V2
 				catch( WebException x )
 				{
 					if( x.Response.GetHttpStatusCode() == HttpStatusCode.InternalServerError )
-						ShipStationLogger.Log.Error( "Error updating order. Encountered 500 Internal Error. Order: {order}", order );
+						ShipStationLogger.Log.Error( Constants.LoggingCommonPrefix + "Error updating order. Encountered 500 Internal Error. Order: {Order}",
+							Constants.ChannelName,
+							Constants.VersionInfo, 
+							this._syncRunContext.TenantId,
+							this._syncRunContext.ChannelAccountId,
+							this._syncRunContext.CorrelationId,
+							nameof(ShipStationService),
+							nameof(this.UpdateOrderAsync),
+							order );
 					else if( x.Response.GetHttpStatusCode() == HttpStatusCode.NotFound )
-						ShipStationLogger.Log.Error( "Error updating order. Encountered 404 Not Found. Order: {order}", order );
+						ShipStationLogger.Log.Error( Constants.LoggingCommonPrefix + "Error updating order. Encountered 404 Not Found. Order: {Order}",
+							Constants.ChannelName,
+							Constants.VersionInfo, 
+							this._syncRunContext.TenantId,
+							this._syncRunContext.ChannelAccountId,
+							this._syncRunContext.CorrelationId,
+							nameof(ShipStationService),
+							nameof(this.UpdateOrderAsync),
+							order );
 					else
 						throw;
 				}
@@ -599,13 +665,37 @@ namespace ShipStationAccess.V2
 			{
 				try
 				{
-					ShipStationLogger.Log.Info( "Try send register request. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
+					ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Try send register request. Command: {Command}. Register: {Register}",
+						Constants.ChannelName,
+						Constants.VersionInfo, 
+						this._syncRunContext.TenantId,
+						this._syncRunContext.ChannelAccountId,
+						this._syncRunContext.CorrelationId,
+						nameof(ShipStationService),
+						nameof(this.Register),
+						ShipStationCommand.Register.Command, register );
 					response = this._webRequestServices.PostDataAndGetResponseWithShipstationHeader< ShipStationRegisterResponse >( ShipStationCommand.Register, register.SerializeToJson(), token, true, _timeouts[ ShipStationOperationEnum.Register ] );
-					ShipStationLogger.Log.Info( "Try send register request is success. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
+					ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Try send register request is success. Command: {Command}. Register: {Register}",
+						Constants.ChannelName,
+						Constants.VersionInfo, 
+						this._syncRunContext.TenantId,
+						this._syncRunContext.ChannelAccountId,
+						this._syncRunContext.CorrelationId,
+						nameof(ShipStationService),
+						nameof(this.Register),
+						ShipStationCommand.Register.Command, register );
 				}
 				catch( Exception ex )
 				{
-					ShipStationLogger.Log.Error( "Try send register request is fail. Command: {command}. Register: {register}", ShipStationCommand.Register.Command, register );
+					ShipStationLogger.Log.Error( Constants.LoggingCommonPrefix + "Try send register request is fail. Command: {Command}. Register: {Register}",
+						Constants.ChannelName,
+						Constants.VersionInfo, 
+						this._syncRunContext.TenantId,
+						this._syncRunContext.ChannelAccountId,
+						this._syncRunContext.CorrelationId,
+						nameof(ShipStationService),
+						nameof(this.Register),
+						ShipStationCommand.Register.Command, register );
 					throw new ShipStationRegisterException( ex.Message );
 				}
 			} );

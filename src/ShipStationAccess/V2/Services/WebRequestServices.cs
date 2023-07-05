@@ -14,22 +14,7 @@ using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
 
 namespace ShipStationAccess.V2.Services
-{ 
-	public interface IWebRequestServices
-	{
-		string GetApiKey();
-		T GetResponse< T >( ShipStationCommand command, string commandParams, CancellationToken token, int? operationTimeout = null );
-		Task< T > GetResponseAsync< T >( ShipStationCommand command, string commandParams, CancellationToken token, int? operationTimeout = null );
-		void PostData( ShipStationCommand command, string jsonContent, CancellationToken token, int? operationTimeout = null );
-		Task PostDataAsync( ShipStationCommand command, string jsonContent, CancellationToken token, int? operationTimeout = null );
-		T PostDataAndGetResponse< T >( ShipStationCommand command, string jsonContent, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null );
-		Task< T > PostDataAndGetResponseAsync< T >( ShipStationCommand command, string jsonContent, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null );
-		T PostDataAndGetResponseWithShipstationHeader< T >( ShipStationCommand command, string jsonContent, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null );
-		bool CanSkipException( WebException e );
-
-		DateTime? LastNetworkActivityTime { get; }
-	}
-
+{
 	internal sealed class WebRequestServices : IWebRequestServices
 	{
 		private readonly ShipStationCredentials _credentials;
@@ -40,11 +25,6 @@ namespace ShipStationAccess.V2.Services
 		public const int TooManyRequestsErrorCode = 429;
 		public const int DefaultThrottlingWaitTimeInSeconds = 60;
 		public const int MaxHttpRequestTimeoutInMinutes = 30;
-
-		public string GetApiKey()
-		{
-			return _credentials.ApiKey;
-		}
 
 		public WebRequestServices( ShipStationCredentials credentials )
 		{
