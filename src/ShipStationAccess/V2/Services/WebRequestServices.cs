@@ -276,7 +276,7 @@ namespace ShipStationAccess.V2.Services
 			if( !this.IsRequestThrottled( responseMessage, responseContent, out var rateResetInSeconds ) )
 				return;
 
-			ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Response for url '{Uri}':\n{ResetInSeconds} - {IsThrottled}\n{Response}",
+			ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Response indicates throttling. Url '{Uri}':\nRateResetInSeconds: {ResetInSeconds}\nResponse: {Response}",
 				Constants.ChannelName,
 				Constants.VersionInfo,
 				this._syncRunContext.TenantId,
@@ -284,7 +284,7 @@ namespace ShipStationAccess.V2.Services
 				this._syncRunContext.CorrelationId,
 				nameof(WebRequestServices),
 				nameof(this.ThrowIfError),
-				url, rateResetInSeconds, true, responseContent );
+				url, rateResetInSeconds, responseContent );
 			throw new ShipStationThrottleException( rateResetInSeconds );
 		}
 
