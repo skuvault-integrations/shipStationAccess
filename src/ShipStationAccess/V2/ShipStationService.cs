@@ -16,6 +16,7 @@ using ShipStationAccess.V2.Models.WarehouseLocation;
 using ShipStationAccess.V2.Services;
 using ShipStationAccess.V2.Models.Register;
 using System.Threading;
+using SkuVault.Integrations.Core.Common;
 
 namespace ShipStationAccess.V2
 {

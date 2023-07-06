@@ -1,5 +1,6 @@
 using ShipStationAccess.V2;
 using ShipStationAccess.V2.Models;
+using SkuVault.Integrations.Core.Common;
 
 namespace ShipStationAccess
 {

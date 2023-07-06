@@ -12,6 +12,7 @@ using ShipStationAccess.V2.Exceptions;
 using ShipStationAccess.V2.Misc;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Models.Command;
+using SkuVault.Integrations.Core.Common;
 
 namespace ShipStationAccess.V2.Services
 {

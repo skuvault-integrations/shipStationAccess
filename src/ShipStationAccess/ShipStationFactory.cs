@@ -2,6 +2,7 @@
 using ShipStationAccess.V2;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Services;
+using SkuVault.Integrations.Core.Common;
 
 namespace ShipStationAccess
 {

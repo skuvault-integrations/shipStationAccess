@@ -8,6 +8,7 @@ using ShipStationAccess.V2.Models;
 using System.Linq;
 using NUnit.Framework;
 using ShipStationAccess.V2;
+using SkuVault.Integrations.Core.Common;
 
 namespace ShipStationAccessTests
 {
