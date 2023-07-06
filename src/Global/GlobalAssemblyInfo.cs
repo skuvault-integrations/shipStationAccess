@@ -22,5 +22,4 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-// Keep in track with CA API version
-[ assembly : AssemblyVersion( "1.5.1" ) ]
+[ assembly : AssemblyVersion( "1.6.1" ) ]

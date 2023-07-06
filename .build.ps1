@@ -48,7 +48,7 @@ task Package  {
 # Set $script:Version = assembly version
 task Version {
 	assert (( Get-Item $build_artifacts_dir\$project_name.dll ).VersionInfo.FileVersion -match '^(\d+\.\d+\.\d+)')
-	$script:Version = $matches[1]
+	$script:Version = $matches[1] + '-alpha.1'
 }
 
 task Archive {
