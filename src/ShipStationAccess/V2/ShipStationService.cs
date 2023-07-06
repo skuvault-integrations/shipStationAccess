@@ -19,7 +19,7 @@ using System.Threading;
 
 namespace ShipStationAccess.V2
 {
-	internal sealed class ShipStationService: IShipStationService
+	public sealed class ShipStationService: IShipStationService
 	{
 		private readonly IWebRequestServices _webRequestServices;
 		private readonly SyncRunContext _syncRunContext;
@@ -28,7 +28,7 @@ namespace ShipStationAccess.V2
 		// lowered max limit for less order loss on Shipsation API's internal errors
 		private const int RequestMaxLimit = 20;
 
-		public ShipStationService( IWebRequestServices webRequestServices, SyncRunContext syncRunContext, ShipStationTimeouts timeouts )
+		internal ShipStationService( IWebRequestServices webRequestServices, SyncRunContext syncRunContext, ShipStationTimeouts timeouts )
 		{
 			this._webRequestServices = webRequestServices;
 			this._syncRunContext = syncRunContext;
