@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 [ assembly : AssemblyTitle( "ShipStationAccess" ) ]
 [ assembly : AssemblyConfiguration( "" ) ]
 [ assembly : InternalsVisibleTo( "ShipStationAccessTests" ) ]
+// Need to use Substitute.For< IWebRequestServices > in tests
 [ assembly : InternalsVisibleTo( "DynamicProxyGenAssembly2" ) ]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
