@@ -1,37 +1,34 @@
 ﻿using CuttingEdge.Conditions;
 using ShipStationAccess.V2;
 using ShipStationAccess.V2.Models;
+using ShipStationAccess.V2.Services;
+using SkuVault.Integrations.Core.Common;
 
 namespace ShipStationAccess
 {
-	public interface IShipStationFactory
-	{
-		IShipStationService CreateServiceV2( ShipStationCredentials credentials, ShipStationTimeouts operationsTimeouts );
-		IShipStationService CreateServiceV2( ShipStationCredentials credentials );
-	}
-
 	public class ShipStationFactory: IShipStationFactory
 	{
-		private string _partnerKey{ get; set; }
+		private string PartnerKey{ get; }
 
 		public ShipStationFactory( string partnerKey = null )
 		{
-			this._partnerKey = partnerKey;
+			this.PartnerKey = partnerKey;
 		}
 
-		public IShipStationService CreateServiceV2( ShipStationCredentials credentials )
+		public IShipStationService CreateServiceV2( ShipStationCredentials credentials, SyncRunContext syncRunContext )
 		{
-			return CreateServiceV2( credentials, new ShipStationTimeouts() );
+			return CreateServiceV2( credentials, syncRunContext, new ShipStationTimeouts() );
 		}
 
-		public IShipStationService CreateServiceV2( ShipStationCredentials credentials, ShipStationTimeouts operationsTimeouts )
+		public IShipStationService CreateServiceV2( ShipStationCredentials credentials, SyncRunContext syncRunContext, ShipStationTimeouts operationsTimeouts )
 		{
 			Condition.Requires( credentials, "credentials" ).IsNotNull();
 
 			if( string.IsNullOrWhiteSpace( credentials.PartnerKey ) )
-				credentials.PartnerKey = this._partnerKey;
+				credentials.PartnerKey = this.PartnerKey;
 
-			return new ShipStationService( credentials, operationsTimeouts );
+			var webRequestServices = new WebRequestServices( credentials, syncRunContext );
+			return new ShipStationService( webRequestServices, syncRunContext, operationsTimeouts );
 		}
 	}
 }
