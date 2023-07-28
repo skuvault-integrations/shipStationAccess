@@ -48,7 +48,7 @@ task Package  {
 # Set $script:Version = assembly version
 task Version {
 	assert (( Get-Item $build_artifacts_dir\$project_name.dll ).VersionInfo.FileVersion -match '^(\d+\.\d+\.\d+)')
-	$script:Version = $matches[1] + '-alpha.1'
+	$script:Version = $matches[1]
 }
 
 task Archive {
@@ -109,7 +109,7 @@ task NuGet Package, Version, {
 	$push_project = Read-Host "Push $($project_name) " $Version " to NuGet? (Y/N)"
 	Write-Host $push_project
 	if( $push_project -eq "y" -or $push_project -eq "Y" )	{
-		Get-ChildItem $build_dir\*.nupkg |% { exec { & $nuget push  $_.FullName -Source nuget.org }}
+		Get-ChildItem $build_dir\*.nupkg |% { exec { & $nuget push  $_.FullName -Source https://nuget.pkg.github.com/skuvault-integrations }}
 	}
 }
 
