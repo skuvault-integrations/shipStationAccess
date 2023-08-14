@@ -23,6 +23,8 @@ namespace ShipStationAccessTests.Orders
 	{
 		private const string TestOrderWithShipments = "564221696";
 		private const string TestOrderWithFulfillments = "576752152";
+		private readonly DateTime TestOrderWithShipmentsCreatedDate = new DateTime( 2020, 6, 10 );
+		private readonly DateTime TestOrderWithFulfillmentsCreatedDate = new DateTime( 2020, 7, 20 );
 
 		[Test]
 		public void DeserializeOrderWithNullablePaymentDateTest()
@@ -213,6 +215,24 @@ namespace ShipStationAccessTests.Orders
 		public async Task GetOrderFulfillmentsAsync()
 		{
 			var orderFulfillments = await this._shipStationService.GetOrderFulfillmentsByIdAsync( TestOrderWithFulfillments, CancellationToken.None );
+
+			orderFulfillments.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		[ Explicit ]
+		public async Task GetOrderShipmentsByCreatedDateAsync_ShouldReturnOrdersWithShipments()
+		{
+			var orderShipments = await this._shipStationService.GetOrderShipmentsByCreatedDateAsync( TestOrderWithShipmentsCreatedDate, CancellationToken.None );
+
+			orderShipments.Count().Should().BeGreaterThan( 0 );
+		}
+
+		[ Test ]
+		[ Explicit ]
+		public async Task GetOrderFulfillmentsByCreatedDateAsync_ShouldReturnOrdersWithFullfilments()
+		{
+			var orderFulfillments = await this._shipStationService.GetOrderFulfillmentsByCreatedDateAsync( TestOrderWithFulfillmentsCreatedDate, CancellationToken.None );
 
 			orderFulfillments.Count().Should().BeGreaterThan( 0 );
 		}
