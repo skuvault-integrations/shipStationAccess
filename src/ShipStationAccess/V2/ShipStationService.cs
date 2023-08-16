@@ -459,7 +459,7 @@ namespace ShipStationAccess.V2
 		}
 
 		/// <summary>
-		/// Uses the minimum order's 'createDate' value to fetch all shipments and fulfillments created on or after that date.
+		/// Uses the minimum order's 'createDate' value to fetch all shipments and fulfillments created on or after that date, and updates the corresponding collections in the orders list.
 		/// </summary>
 		private async Task GetShipmentsAndFullfilmentsByCreationDate( IEnumerable< ShipStationOrder > orders, CancellationToken token )
 		{
@@ -476,7 +476,7 @@ namespace ShipStationAccess.V2
 		}
 
 		/// <summary>
-		/// Makes two separate calls to ShipStation's API to obtain shipments and fulfillment data per each order.
+		/// Makes two separate calls to ShipStation's API to obtain shipments and fulfillment data per each order and updates the corresponding collections in the orders list.
 		/// </summary>
 		private async Task GetShipmentsAndFullfilmentByOrderId( IEnumerable< ShipStationOrder > orders, CancellationToken token )
 		{
@@ -510,7 +510,7 @@ namespace ShipStationAccess.V2
 					break;
 
 				++currentPage;
-				totalShipStationShipmentsPages = ordersShipmentsPage.Pages + 1;
+				totalShipStationShipmentsPages = ordersShipmentsPage.TotalPages + 1;
 
 				orderShipments.AddRange( ordersShipmentsPage.Shipments );
 			}
@@ -542,7 +542,7 @@ namespace ShipStationAccess.V2
 					break;
 
 				++currentPage;
-				totalShipStationShipmentsPages = ordersShipmentsPage.Pages + 1;
+				totalShipStationShipmentsPages = ordersShipmentsPage.TotalPages + 1;
 
 				orderShipments.AddRange( ordersShipmentsPage.Shipments );
 			}
@@ -574,7 +574,7 @@ namespace ShipStationAccess.V2
 					break;
 
 				++currentPage;
-				totalShipStationFulfillmentsPages = orderFulfillmentsPage.Pages + 1;
+				totalShipStationFulfillmentsPages = orderFulfillmentsPage.TotalPages + 1;
 
 				orderFulfillments.AddRange( orderFulfillmentsPage.Fulfillments );
 			}
@@ -606,7 +606,7 @@ namespace ShipStationAccess.V2
 					break;
 
 				++currentPage;
-				totalShipStationFulfillmentsPages = orderFulfillmentsPage.Pages + 1;
+				totalShipStationFulfillmentsPages = orderFulfillmentsPage.TotalPages + 1;
 
 				orderFulfillments.AddRange( orderFulfillmentsPage.Fulfillments );
 			}

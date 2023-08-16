@@ -11,13 +11,13 @@ namespace ShipStationAccess.V2.Models.Order
 		public IEnumerable< ShipStationOrderFulfillment > Fulfillments { get; set; }
 
 		[ DataMember( Name = "total" ) ]
-		public int Total { get; set; }
+		public int TotalFulfillments { get; set; }
 
 		[ DataMember( Name = "page" ) ]
 		public int Page { get; set; }
 
 		[ DataMember( Name = "pages" ) ]
-		public int Pages { get; set; }
+		public int TotalPages { get; set; }
 	}
 
 	[ DataContract ]
