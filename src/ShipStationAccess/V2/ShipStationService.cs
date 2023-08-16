@@ -465,13 +465,13 @@ namespace ShipStationAccess.V2
 		{
 			var ordersList = orders.ToList();
 			var minOrderDate = ordersList.Min( o => o.CreateDate );
-			var shipments = await this.GetOrderShipmentsByCreatedDateAsync( minOrderDate, token ).ConfigureAwait( false );
-			var fulfillments = await this.GetOrderFulfillmentsByCreatedDateAsync( minOrderDate, token ).ConfigureAwait( false );
+			var shipments = ( await this.GetOrderShipmentsByCreatedDateAsync( minOrderDate, token ).ConfigureAwait( false ) ).ToList();
+			var fulfillments = ( await this.GetOrderFulfillmentsByCreatedDateAsync( minOrderDate, token ).ConfigureAwait( false ) ).ToList();
 
 			foreach( var order in ordersList )
 			{
-				order.Shipments = shipments.ToList().Where( s => s.OrderId == order.OrderId );
-				order.Fulfillments = fulfillments.ToList().Where( f => f.OrderId == order.OrderId );
+				order.Shipments = shipments.Where( s => s.OrderId == order.OrderId ).ToList();
+				order.Fulfillments = fulfillments.Where( f => f.OrderId == order.OrderId ).ToList();
 			}
 		}
 
