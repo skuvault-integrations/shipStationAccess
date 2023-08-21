@@ -21,7 +21,9 @@ namespace ShipStationAccess.V2
 		ShipStationOrder GetOrderById( string orderId, CancellationToken token );
 		Task< ShipStationOrder > GetOrderByIdAsync( string orderId, CancellationToken token );
 		Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByIdAsync( string orderId, CancellationToken token );
+		Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByCreatedDateAsync( DateTime createdDate, CancellationToken token );
 		Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByIdAsync( string orderId, CancellationToken token );
+		Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByCreatedDateAsync( DateTime createdDate, CancellationToken token );
 		
 		void UpdateOrder( ShipStationOrder order, CancellationToken token );
 		Task UpdateOrderAsync( ShipStationOrder order, CancellationToken token );

@@ -25,9 +25,9 @@ namespace ShipStationAccess.V2
 		private readonly IWebRequestServices _webRequestServices;
 		private readonly SyncRunContext _syncRunContext;
 		private readonly ShipStationTimeouts _timeouts;
-
-		// lowered max limit for less order loss on Shipsation API's internal errors
-		private const int RequestMaxLimit = 20;
+		private const int OrdersPageSize = 500;
+		// Max orders that can be processed without needing complex shipping and fulfillment handling.
+		private const int OrderProcessingThreshold = 10;
 
 		internal ShipStationService( IWebRequestServices webRequestServices, SyncRunContext syncRunContext, ShipStationTimeouts timeouts )
 		{
@@ -122,7 +122,7 @@ namespace ShipStationAccess.V2
 
 				do
 				{
-					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, OrdersPageSize ) );
 					var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
 
 					ActionPolicies.Get.Do( () =>
@@ -202,7 +202,7 @@ namespace ShipStationAccess.V2
 		{
 			var createdOrdersEndpoint = ParamsBuilder.CreateNewOrdersParams( dateFrom, dateTo );
 			var createdOrdersResponse = new SummaryResponse< ShipStationOrder >();
-			await this.DownloadOrdersAsync( createdOrdersResponse, createdOrdersEndpoint, 1, RequestMaxLimit, token ).ConfigureAwait( false );
+			await this.DownloadOrdersAsync( createdOrdersResponse, createdOrdersEndpoint, 1, OrdersPageSize, token ).ConfigureAwait( false );
 			if ( createdOrdersResponse.Data.Any() )
 			{
 				ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Created orders downloaded - {Orders}/{ExpectedOrders} orders from {Endpoint}. Response: '{Response}'",
@@ -223,7 +223,7 @@ namespace ShipStationAccess.V2
 		{
 			var modifiedOrdersEndpoint = ParamsBuilder.CreateModifiedOrdersParams( dateFrom, dateTo );
 			var modifiedOrdersResponse = new SummaryResponse< ShipStationOrder >();
-			await this.DownloadOrdersAsync( modifiedOrdersResponse, modifiedOrdersEndpoint, 1, RequestMaxLimit, token ).ConfigureAwait( false );
+			await this.DownloadOrdersAsync( modifiedOrdersResponse, modifiedOrdersEndpoint, 1, OrdersPageSize, token ).ConfigureAwait( false );
 			if ( modifiedOrdersResponse.Data.Any() )
 			{
 				ShipStationLogger.Log.Info( Constants.LoggingCommonPrefix + "Modified orders downloaded - {Orders}/{ExpectedOrders} orders from {Endpoint}. Response: '{Response}'",
@@ -307,9 +307,9 @@ namespace ShipStationAccess.V2
 				summary.Data.AddRange( ordersPage.Data );
 				currentPage++;
 
-				if ( currentPageSize != RequestMaxLimit )
+				if ( currentPageSize != OrdersPageSize )
 				{
-					var newPageSize = PageSizeAdjuster.DoublePageSize( currentPageSize, RequestMaxLimit );
+					var newPageSize = PageSizeAdjuster.DoublePageSize( currentPageSize, OrdersPageSize );
 					var newCurrentPage = PageSizeAdjuster.GetNextPageIndex( summary.TotalEntitiesHandled, newPageSize );
 
 					if ( !PageSizeAdjuster.AreEntitiesWillBeDownloadedAgainAfterChangingThePageSize( newCurrentPage, newPageSize, summary.TotalEntitiesHandled ) )
@@ -390,7 +390,7 @@ namespace ShipStationAccess.V2
 
 				do
 				{
-					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+					var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, OrdersPageSize ) );
 					var ordersEndPoint = endPoint.ConcatParams( nextPageParams );
 
 					ActionPolicies.Get.Do( () =>
@@ -448,7 +448,39 @@ namespace ShipStationAccess.V2
 
 		private async Task FindShipmentsAndFulfillments( IEnumerable< ShipStationOrder > orders, CancellationToken token )
 		{
-			foreach( var order in orders )
+			if( orders.ToList().Count > OrderProcessingThreshold )
+			{
+				await GetShipmentsAndFullfilmentsByCreationDate( orders, token ).ConfigureAwait( false );
+			}
+			else
+			{
+				await GetShipmentsAndFullfilmentByOrderId( orders, token ).ConfigureAwait( false );
+			}
+		}
+
+		/// <summary>
+		/// Uses the minimum order's 'createDate' value to fetch all shipments and fulfillments created on or after that date, and updates the corresponding collections in the orders list.
+		/// </summary>
+		private async Task GetShipmentsAndFullfilmentsByCreationDate( IEnumerable< ShipStationOrder > orders, CancellationToken token )
+		{
+			var ordersList = orders.ToList();
+			var minOrderDate = ordersList.Min( o => o.CreateDate );
+			var shipments = ( await this.GetOrderShipmentsByCreatedDateAsync( minOrderDate, token ).ConfigureAwait( false ) ).ToList();
+			var fulfillments = ( await this.GetOrderFulfillmentsByCreatedDateAsync( minOrderDate, token ).ConfigureAwait( false ) ).ToList();
+
+			foreach( var order in ordersList )
+			{
+				order.Shipments = shipments.Where( s => s.OrderId == order.OrderId ).ToList();
+				order.Fulfillments = fulfillments.Where( f => f.OrderId == order.OrderId ).ToList();
+			}
+		}
+
+		/// <summary>
+		/// Makes two separate calls to ShipStation's API to obtain shipments and fulfillment data per each order and updates the corresponding collections in the orders list.
+		/// </summary>
+		private async Task GetShipmentsAndFullfilmentByOrderId( IEnumerable< ShipStationOrder > orders, CancellationToken token )
+		{
+			foreach( var order in orders.ToList() )
 			{
 				order.Shipments = await this.GetOrderShipmentsByIdAsync( order.OrderId.ToString(), token ).ConfigureAwait( false );
 				order.Fulfillments = await this.GetOrderFulfillmentsByIdAsync( order.OrderId.ToString(), token ).ConfigureAwait( false );
@@ -465,7 +497,7 @@ namespace ShipStationAccess.V2
 			do
 			{
 				var getOrderShipmentsEndpoint = ParamsBuilder.CreateOrderShipmentsParams( orderId );
-				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, OrdersPageSize ) );
 				var orderShipmentsByPageEndPoint = getOrderShipmentsEndpoint.ConcatParams( nextPageParams );
 
 				ShipStationOrderShipments ordersShipmentsPage = null;
@@ -478,7 +510,39 @@ namespace ShipStationAccess.V2
 					break;
 
 				++currentPage;
-				totalShipStationShipmentsPages = ordersShipmentsPage.Pages + 1;
+				totalShipStationShipmentsPages = ordersShipmentsPage.TotalPages + 1;
+
+				orderShipments.AddRange( ordersShipmentsPage.Shipments );
+			}
+			while( currentPage <= totalShipStationShipmentsPages );
+
+			return orderShipments;
+		}
+		
+		public async Task< IEnumerable< ShipStationOrderShipment > > GetOrderShipmentsByCreatedDateAsync( DateTime createdDate, CancellationToken token )
+		{
+			var orderShipments = new List< ShipStationOrderShipment >();
+
+			var currentPage = 1;
+			int? totalShipStationShipmentsPages;
+
+			do
+			{
+				var getOrderShipmentsEndpoint = ParamsBuilder.CreateOrderShipmentsParams( createdDate );
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, OrdersPageSize ) );
+				var orderShipmentsByPageEndPoint = getOrderShipmentsEndpoint.ConcatParams( nextPageParams );
+
+				ShipStationOrderShipments ordersShipmentsPage = null;
+				await ActionPolicies.GetAsync.Do( async () =>
+				{
+					ordersShipmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderShipments >( ShipStationCommand.GetOrderShipments, orderShipmentsByPageEndPoint, token, _timeouts[ ShipStationOperationEnum.GetOrderShipments ] ).ConfigureAwait( false );
+				} );
+
+				if ( ordersShipmentsPage?.Shipments == null || !ordersShipmentsPage.Shipments.Any() )
+					break;
+
+				++currentPage;
+				totalShipStationShipmentsPages = ordersShipmentsPage.TotalPages + 1;
 
 				orderShipments.AddRange( ordersShipmentsPage.Shipments );
 			}
@@ -497,7 +561,7 @@ namespace ShipStationAccess.V2
 			do
 			{
 				var getOrderFulfillmentsEndpoint = ParamsBuilder.CreateOrderFulfillmentsParams( orderId );
-				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, RequestMaxLimit ) );
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, OrdersPageSize ) );
 				var orderFulfillmentsByPageEndPoint = getOrderFulfillmentsEndpoint.ConcatParams( nextPageParams );
 
 				ShipStationOrderFulfillments orderFulfillmentsPage = null;
@@ -510,7 +574,39 @@ namespace ShipStationAccess.V2
 					break;
 
 				++currentPage;
-				totalShipStationFulfillmentsPages = orderFulfillmentsPage.Pages + 1;
+				totalShipStationFulfillmentsPages = orderFulfillmentsPage.TotalPages + 1;
+
+				orderFulfillments.AddRange( orderFulfillmentsPage.Fulfillments );
+			}
+			while( currentPage <= totalShipStationFulfillmentsPages );
+
+			return orderFulfillments;
+		}
+		
+		public async Task< IEnumerable< ShipStationOrderFulfillment > > GetOrderFulfillmentsByCreatedDateAsync( DateTime createdDate, CancellationToken token )
+		{
+			var orderFulfillments = new List< ShipStationOrderFulfillment >();
+
+			var currentPage = 1;
+			int? totalShipStationFulfillmentsPages;
+
+			do
+			{
+				var getOrderFulfillmentsEndpoint = ParamsBuilder.CreateOrderFulfillmentsParams( createdDate );
+				var nextPageParams = ParamsBuilder.CreateGetNextPageParams( new ShipStationCommandConfig( currentPage, OrdersPageSize ) );
+				var orderFulfillmentsByPageEndPoint = getOrderFulfillmentsEndpoint.ConcatParams( nextPageParams );
+
+				ShipStationOrderFulfillments orderFulfillmentsPage = null;
+				await ActionPolicies.GetAsync.Do( async () =>
+				{
+					orderFulfillmentsPage = await this._webRequestServices.GetResponseAsync< ShipStationOrderFulfillments >( ShipStationCommand.GetOrderFulfillments, orderFulfillmentsByPageEndPoint, token, _timeouts[ ShipStationOperationEnum.GetOrderFulfillments ] ).ConfigureAwait( false );
+				} );
+
+				if ( orderFulfillmentsPage?.Fulfillments == null || !orderFulfillmentsPage.Fulfillments.Any() )
+					break;
+
+				++currentPage;
+				totalShipStationFulfillmentsPages = orderFulfillmentsPage.TotalPages + 1;
 
 				orderFulfillments.AddRange( orderFulfillmentsPage.Fulfillments );
 			}
