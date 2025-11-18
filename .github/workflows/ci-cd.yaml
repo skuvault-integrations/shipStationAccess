@@ -1,4 +1,4 @@
-name: Continuous Integration/Continous Deployment
+name: Continuous Integration/Continuous Deployment
 
 # Runs when a pull request (against master branch) is opened, reopened or when the master branch is updated or when a release tag is created.
 on:
@@ -16,8 +16,8 @@ jobs:
   
     env:
       BUILD_CONFIG: 'Release'
-      SOLUTION_NAME: 'SkuVault.Access.sln'
-      PACKAGES_ARTIFACT: skuvault-acccess-packages
+      SOLUTION_NAME: 'SkuVault.ShipStation.Access.sln'
+      PACKAGES_ARTIFACT: shipstation-acccess-packages
 
     steps:
       - uses: actions/checkout@v4
