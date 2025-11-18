@@ -1,4 +1,4 @@
-﻿using CuttingEdge.Conditions;
+﻿using System;
 using System.Collections.Generic;
 
 namespace ShipStationAccess.V2.Models
@@ -23,7 +23,10 @@ namespace ShipStationAccess.V2.Models
 
 		public ShipStationOperationTimeout( int timeoutInMs )
 		{
-			Condition.Requires( timeoutInMs, "timeoutInMs" ).IsGreaterThan( 0 );
+			if( timeoutInMs <= 0 )
+			{
+				throw new ArgumentOutOfRangeException( nameof( timeoutInMs ), "Value must be greater than 0." );
+			}
 			this.TimeoutInMs = timeoutInMs;
 		}
 	}

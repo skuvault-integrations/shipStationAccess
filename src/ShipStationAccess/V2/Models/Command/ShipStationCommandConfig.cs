@@ -1,4 +1,4 @@
-﻿using CuttingEdge.Conditions;
+﻿using System;
 
 namespace ShipStationAccess.V2.Models.Command
 {
@@ -10,8 +10,15 @@ namespace ShipStationAccess.V2.Models.Command
 		public ShipStationCommandConfig( int page, int pageSize )
 
 		{
-			Condition.Requires( page, "page" ).IsGreaterThan( 0 );
-			Condition.Requires( pageSize, "pageSize" ).IsGreaterThan( 0 );
+			if( page <= 0 )
+			{
+				throw new ArgumentOutOfRangeException( nameof( page ), "Value must be greater than 0." );
+			}
+
+			if( pageSize <= 0 )
+			{
+				throw new ArgumentOutOfRangeException( nameof( pageSize ), "Value must be greater than 0." );
+			}
 
 			this.Page = page;
 			this.PageSize = pageSize;
@@ -19,7 +26,10 @@ namespace ShipStationAccess.V2.Models.Command
 
 		public ShipStationCommandConfig( int pageSize )
 		{
-			Condition.Requires( pageSize, "pageSize" ).IsGreaterThan( 0 );
+			if( pageSize <= 0 )
+			{
+				throw new ArgumentOutOfRangeException( nameof( pageSize ), "Value must be greater than 0." );
+			}
 
 			this.PageSize = pageSize;
 		}

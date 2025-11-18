@@ -1,4 +1,4 @@
-﻿using CuttingEdge.Conditions;
+﻿using System;
 
 namespace ShipStationAccess.V2.Models
 {
@@ -11,8 +11,15 @@ namespace ShipStationAccess.V2.Models
 
 		public ShipStationCredentials( string apiKey, string apiSecret, string partnerKey = null )
 		{
-			Condition.Requires( apiKey, "apiKey" ).IsNotNullOrWhiteSpace();
-			Condition.Requires( apiSecret, "ApiSecret" ).IsNotNullOrWhiteSpace();
+			if( string.IsNullOrWhiteSpace( apiKey ) )
+			{
+				throw new ArgumentException( "Value cannot be null or whitespace.", nameof( apiKey ) );
+			}
+
+			if( string.IsNullOrWhiteSpace( apiSecret ) )
+			{
+				throw new ArgumentException( "Value cannot be null or whitespace.", nameof( apiSecret ) );
+			}
 
 			this.ApiKey = apiKey;
 			this.ApiSecret = apiSecret;
