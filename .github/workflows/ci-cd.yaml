@@ -16,7 +16,7 @@ jobs:
   
     env:
       BUILD_CONFIG: 'Release'
-      SOLUTION_NAME: 'SkuVault.ShipStation.Access.sln'
+      SOLUTION_NAME: './src/SkuVault.ShipStation.Access.sln'
       PACKAGES_ARTIFACT: shipstation-acccess-packages
 
     steps:
