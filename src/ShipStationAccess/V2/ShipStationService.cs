@@ -240,14 +240,15 @@ namespace ShipStationAccess.V2
 			return modifiedOrdersResponse;
 		}
 
-		/// <summary>
-		///	Download all orders from specific endpoint
-		/// </summary>
-		/// <param name="endPoint">API endpoint</param>
-		/// <param name="currentPage">page index</param>
-		/// <param name="currentPageSize">page size</param>
-		/// <param name="token">cancellation token</param>
-		/// <returns></returns>
+		///  <summary>
+		/// 	Download all orders from specific endpoint
+		///  </summary>
+		///  <param name="summary"></param>
+		///  <param name="endPoint">API endpoint</param>
+		///  <param name="currentPage">page index</param>
+		///  <param name="currentPageSize">page size</param>
+		///  <param name="token">cancellation token</param>
+		///  <returns></returns>
 		public async Task DownloadOrdersAsync( SummaryResponse< ShipStationOrder > summary, string endPoint, int currentPage, int currentPageSize, CancellationToken token )
 		{ 
 			while ( true )
@@ -321,14 +322,14 @@ namespace ShipStationAccess.V2
 			}
 		}
 
-		/// <summary>
-		///	Downloads orders page
-		/// </summary>
-		/// <param name="endpoint">API endpoint</param>
-		/// <param name="page">page index</param>
-		/// <param name="pageSize">page size</param>
-		/// <param name="token">cancellation token</param>
-		/// <returns></returns>
+		///  <summary>
+		/// 	Downloads orders page
+		///  </summary>
+		///  <param name="endPoint"></param>
+		///  <param name="page">page index</param>
+		///  <param name="pageSize">page size</param>
+		///  <param name="token">cancellation token</param>
+		///  <returns></returns>
 		private async Task< PageResponse< ShipStationOrder > > DownloadOrdersPageAsync( string endPoint, int page, int pageSize, CancellationToken token )
 		{
 			var ordersPage = new PageResponse< ShipStationOrder >();

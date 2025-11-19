@@ -31,6 +31,6 @@ _ReSharper*/
 .vs/
 
 #Ignore common build files
-build
+src/**/build/
 log
 ShipStationCredentials.csv

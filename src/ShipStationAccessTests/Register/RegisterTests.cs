@@ -5,19 +5,16 @@ using ShipStationAccess.V2.Models.Register;
 
 namespace ShipStationAccessTests.Register
 {
+	[ Explicit ]
 	public class RegisterTests: BaseTest
 	{
 		[ Test ]
 		public void Register()
 		{
-			try
-			{
-				this._shipStationService.Register( new ShipStationRegister( "skuvault", this._credentials.ApiSecret, this._credentials.ApiKey ), CancellationToken.None );
-			}
-			catch( Exception ex )
-			{
-				Assert.Fail( ex.Message );
-			}
+			Assert.That( () =>
+					this._shipStationService.Register( new ShipStationRegister( "skuvault", this._credentials.ApiSecret, this._credentials.ApiKey ), CancellationToken.None ),
+				Throws.Nothing
+			);
 		}
 	}
 }

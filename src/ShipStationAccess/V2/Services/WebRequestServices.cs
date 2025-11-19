@@ -204,15 +204,16 @@ namespace ShipStationAccess.V2.Services
 			}
 		}
 
-		/// <summary>
-		///	Post data to ShipStation's API endpoint async
-		/// </summary>
-		/// <param name="url"></param>
-		/// <param name="payload"></param>
-		/// <param name="token"></param>
-		/// <param name="shouldGetExceptionMessage"></param>
-		/// <param name="operationTimeout"></param>
-		/// <returns></returns>
+		///  <summary>
+		/// 	Post data to ShipStation's API endpoint async
+		///  </summary>
+		///  <param name="url"></param>
+		///  <param name="payload"></param>
+		///  <param name="token"></param>
+		///  <param name="shouldGetExceptionMessage"></param>
+		///  <param name="operationTimeout"></param>
+		///  <param name="useShipStationPartnerHeader"></param>
+		///  <returns></returns>
 		private async Task< string > PostRawDataAsync( string url, string payload, CancellationToken token, bool shouldGetExceptionMessage = false, int? operationTimeout = null, bool useShipStationPartnerHeader = false )
 		{
 			this.LogPostInfo( url, payload, operationTimeout );

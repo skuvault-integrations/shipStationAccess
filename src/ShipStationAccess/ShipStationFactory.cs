@@ -1,4 +1,4 @@
-﻿using CuttingEdge.Conditions;
+﻿using System;
 using ShipStationAccess.V2;
 using ShipStationAccess.V2.Models;
 using ShipStationAccess.V2.Services;
@@ -22,7 +22,10 @@ namespace ShipStationAccess
 
 		public IShipStationService CreateServiceV2( ShipStationCredentials credentials, SyncRunContext syncRunContext, ShipStationTimeouts operationsTimeouts )
 		{
-			Condition.Requires( credentials, "credentials" ).IsNotNull();
+			if( credentials == null )
+			{
+				throw new ArgumentNullException( nameof( credentials ) );
+			}
 
 			if( string.IsNullOrWhiteSpace( credentials.PartnerKey ) )
 				credentials.PartnerKey = this.PartnerKey;

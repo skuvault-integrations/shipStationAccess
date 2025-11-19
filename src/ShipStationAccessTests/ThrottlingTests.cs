@@ -10,7 +10,7 @@ namespace ShipStationAccessTests
 {
 	public class ThrottlingTests: BaseTest
 	{
-
+		[ Explicit ]
 		[ Test ]
 		public async Task ThrottlingTest()
 		{

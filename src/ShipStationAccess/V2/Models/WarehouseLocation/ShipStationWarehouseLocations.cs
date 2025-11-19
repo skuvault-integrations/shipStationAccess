@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Netco.Extensions;
@@ -42,7 +42,7 @@ namespace ShipStationAccess.V2.Models.WarehouseLocation
 				HashSet< long > oldOrderItemIds;
 				if( !this.WarehouseLocations.TryGetValue( warehouseLocation, out oldOrderItemIds ) )
 				{
-					this.WarehouseLocations[ warehouseLocation ] = Enumerable.ToHashSet( orderItemIds );
+					this.WarehouseLocations[ warehouseLocation ] = new HashSet< long >( orderItemIds );
 					return;
 				}
 

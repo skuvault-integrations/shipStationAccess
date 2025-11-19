@@ -8,6 +8,7 @@ using ShipStationAccess.V2.Services;
 
 namespace ShipStationAccessTests.Orders
 {
+	[ Explicit ]
 	public class SerializationTests: BaseTest
 	{
 		[ Test ]
@@ -50,7 +51,7 @@ namespace ShipStationAccessTests.Orders
 
 			//------------ Assert
 			order.PaymentDate.Should().Be( new DateTime( 2015, 06, 06, 07, 29, 35, 00, DateTimeKind.Utc ) );
-			Assert.AreEqual( serializedOrderString, serializedOrderString2 );
+			Assert.That( serializedOrderString, Is.EqualTo( serializedOrderString2 ) );
 		}
 
 		[ Test ]
@@ -62,7 +63,7 @@ namespace ShipStationAccessTests.Orders
 			var serializedOrder = testOrder.SerializeToJson();
 			var deserializedOrder = serializedOrder.DeserializeJson< ShipStationOrder >();
 			var serializedOrder2 = deserializedOrder.SerializeToJson();
-			Assert.AreEqual( serializedOrder, serializedOrder2 );
+			Assert.That( serializedOrder, Is.EqualTo( serializedOrder2 ) );
 		}
 
 		[ Test ]

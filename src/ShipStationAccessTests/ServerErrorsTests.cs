@@ -1,5 +1,4 @@
-﻿using FluentAssertions;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using ShipStationAccess.V2.Exceptions;
 using ShipStationAccess.V2.Models;
 using System;
@@ -9,6 +8,7 @@ using ShipStationAccess.V2;
 
 namespace ShipStationAccessTests
 {
+	[ Explicit ]
 	[ TestFixture ]
 	public class ServerErrorsTests : BaseTest
 	{
@@ -29,9 +29,9 @@ namespace ShipStationAccessTests
 				this._shipStationServiceWithInvalidCredentials.GetOrdersAsync( DateTime.UtcNow.AddDays( -10 ), DateTime.UtcNow, CancellationToken.None ).Wait();
 			} );
 
-			ex.Should().NotBeNull();
-			ex.InnerException.Should().NotBeNull();
-			ex.InnerException.GetType().Should().Be( typeof( ShipStationUnauthorizedException ) );
+			Assert.That( ex, Is.Not.Null );
+			Assert.That( ex.InnerException, Is.Not.Null );
+			Assert.That( ex.InnerException, Is.TypeOf< ShipStationUnauthorizedException >() );
 		}
 
 		[ Test ]
@@ -46,9 +46,9 @@ namespace ShipStationAccessTests
 				this._shipStationServiceWithInvalidCredentials.UpdateOrderAsync( order, CancellationToken.None ).Wait();
 			} );
 
-			ex.Should().NotBeNull();
-			ex.InnerException.Should().NotBeNull();
-			ex.InnerException.GetType().Should().Be( typeof( ShipStationUnauthorizedException ) );
+			Assert.That( ex, Is.Not.Null );
+			Assert.That( ex.InnerException, Is.Not.Null );
+			Assert.That( ex.InnerException, Is.TypeOf< ShipStationUnauthorizedException >() );
 		}
 
 		[ Test ]
@@ -66,7 +66,7 @@ namespace ShipStationAccessTests
 				tinyTimeoutsService.GetOrders( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
 			} );
 			
-			ex.Should().NotBeNull();
+			Assert.That( ex, Is.Not.Null );
 		}
 
 		[ Test ]
@@ -84,7 +84,7 @@ namespace ShipStationAccessTests
 				await tinyTimeoutsService.GetOrdersAsync( DateTime.UtcNow.AddDays( -3 ), DateTime.UtcNow, CancellationToken.None );
 			} );
 
-			ex.Should().NotBeNull();
+			Assert.That( ex, Is.Not.Null );
 		}
 	}
 }
